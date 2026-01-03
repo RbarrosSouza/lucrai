@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Landmark, Layout, Layers, Users } from 'lucide-react';
+import { Landmark, Layout, Layers, Users, UserRound } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { DreConfiguration } from './dre/DreConfiguration';
 import { CostCenterConfiguration } from './cost-centers/CostCenterConfiguration';
 import { SuppliersConfiguration } from './suppliers/SuppliersConfiguration';
 import { BankAccountsConfiguration } from './banks/BankAccountsConfiguration';
+import { MyProfileSettings } from './profile/MyProfileSettings';
 
-type Tab = 'DRE' | 'CC' | 'SUPPLIERS' | 'BANKS';
+type Tab = 'DRE' | 'CC' | 'SUPPLIERS' | 'BANKS' | 'PROFILE';
 
 export default function SettingsPage() {
   const location = useLocation();
@@ -15,7 +16,7 @@ export default function SettingsPage() {
   const queryTab = useMemo(() => {
     const sp = new URLSearchParams(location.search);
     const raw = (sp.get('tab') ?? '').toUpperCase();
-    if (raw === 'DRE' || raw === 'CC' || raw === 'SUPPLIERS' || raw === 'BANKS') return raw as Tab;
+    if (raw === 'DRE' || raw === 'CC' || raw === 'SUPPLIERS' || raw === 'BANKS' || raw === 'PROFILE') return raw as Tab;
     return 'DRE' as Tab;
   }, [location.search]);
 
@@ -91,6 +92,18 @@ export default function SettingsPage() {
               <Landmark size={18} />
               Bancos / Contas
             </button>
+
+            <button
+              onClick={() => setTab('PROFILE')}
+              className={`${
+                activeTab === 'PROFILE'
+                  ? 'border-lucrai-500 text-lucrai-700'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors`}
+            >
+              <UserRound size={18} />
+              Meu Perfil
+            </button>
           </nav>
         </div>
 
@@ -99,6 +112,7 @@ export default function SettingsPage() {
           {activeTab === 'CC' && <CostCenterConfiguration />}
           {activeTab === 'SUPPLIERS' && <SuppliersConfiguration />}
           {activeTab === 'BANKS' && <BankAccountsConfiguration />}
+          {activeTab === 'PROFILE' && <MyProfileSettings />}
         </div>
       </div>
     </div>

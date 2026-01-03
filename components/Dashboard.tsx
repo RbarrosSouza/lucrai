@@ -7,6 +7,7 @@ import { TransactionType, TransactionStatus } from '../types';
 import type { Transaction } from '../types';
 import { supabase } from '../services/supabaseClient';
 import { formatSupabaseError } from '../services/formatSupabaseError';
+import { useOrgProfile } from './org/OrgProfileContext';
 import { todayISOInSaoPaulo } from '../services/dates';
 
 function formatMoney(v: number) {
@@ -14,6 +15,7 @@ function formatMoney(v: number) {
 }
 
 const Dashboard: React.FC = () => {
+  const { displayLabel } = useOrgProfile();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -137,7 +139,7 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bom dia, Empreendedor! 🚀</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Bom dia, {displayLabel}!</h1>
           <p className="text-gray-500">Visão geral do mês atual (competência).</p>
           {error ? <p className="text-xs text-rose-700 mt-1">{error}</p> : null}
         </div>
