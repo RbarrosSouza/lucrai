@@ -1,0 +1,8 @@
+{
+  "name": "Lucraí",
+  "description": "O copiloto financeiro para microempreendedores. Gestão simples, direta e humana.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
