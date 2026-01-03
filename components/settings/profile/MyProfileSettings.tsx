@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { ImageUp, Loader2, Save, Trash2 } from 'lucide-react';
+import { ImageUp, Loader2, Save, Smartphone, Trash2 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { formatSupabaseError } from '../../../services/formatSupabaseError';
 import { useOrgProfile } from '../../org/OrgProfileContext';
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2MB
 const ALLOWED_MIME = new Set(['image/png', 'image/jpeg', 'image/webp']);
+const E164_RE = /^\+[1-9]\d{7,14}$/;
 
 function extFromMime(mime: string) {
   if (mime === 'image/png') return 'png';
@@ -21,6 +22,11 @@ export function MyProfileSettings() {
   const [fantasyName, setFantasyName] = useState(org?.fantasy_name ?? '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [waPhone, setWaPhone] = useState('');
+  const [waCode, setWaCode] = useState<string | null>(null);
+  const [waExpiresAt, setWaExpiresAt] = useState<string | null>(null);
+  const [waStatus, setWaStatus] = useState<string | null>(null);
+  const [isWaLoading, setIsWaLoading] = useState(false);
 
   const previewUrl = useMemo(() => {
     if (!logoFile) return null;
@@ -30,6 +36,25 @@ export function MyProfileSettings() {
   const busy = status === 'loading' || isSaving;
 
   const canSave = Boolean(orgId) && !busy;
+
+  const loadWhatsAppStatus = async () => {
+    if (!orgId) return;
+    try {
+      setIsWaLoading(true);
+      const res = await supabase
+        .from('whatsapp_identities')
+        .select('phone_e164,status')
+        .eq('org_id', orgId)
+        .maybeSingle();
+      if (res.error) throw res.error;
+      if (res.data?.phone_e164) setWaPhone(res.data.phone_e164);
+      setWaStatus(res.data?.status ?? null);
+    } catch (e: any) {
+      // não bloqueia a tela se ainda não tiver a parte 2
+    } finally {
+      setIsWaLoading(false);
+    }
+  };
 
   const onPickLogo = (f: File | null) => {
     if (!f) return;
@@ -103,6 +128,31 @@ export function MyProfileSettings() {
       alert(`Erro ao salvar.\n\n${formatSupabaseError(e)}`);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const onGenerateWhatsAppCode = async () => {
+    if (!orgId) return;
+    const phone = waPhone.trim();
+    if (!E164_RE.test(phone)) {
+      alert('Telefone inválido. Use formato E.164 (ex: +5516981109472).');
+      return;
+    }
+    try {
+      setIsWaLoading(true);
+      setWaCode(null);
+      setWaExpiresAt(null);
+      const res = await supabase.rpc('whatsapp_generate_verification_code', { _phone_e164: phone });
+      if (res.error) throw res.error;
+      const row = Array.isArray(res.data) ? res.data[0] : res.data;
+      setWaCode(row?.code ?? null);
+      setWaExpiresAt(row?.expires_at ?? null);
+      setWaStatus('pending');
+      alert('Código gerado. Envie pelo WhatsApp para conectar.');
+    } catch (e: any) {
+      alert(`Erro ao gerar código.\n\n${formatSupabaseError(e)}`);
+    } finally {
+      setIsWaLoading(false);
     }
   };
 
@@ -222,6 +272,70 @@ export function MyProfileSettings() {
             Observação: o logo é armazenado de forma <b>privada</b> (via signed URL).
           </div>
         </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-2xl p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <Smartphone size={18} className="text-lucrai-600" />
+              <h3 className="text-sm font-extrabold text-gray-900">WhatsApp conectado</h3>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">
+              Conecte seu WhatsApp para operar via assistente no n8n. Um telefone fica vinculado a <b>uma</b> empresa.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={loadWhatsAppStatus}
+            disabled={isWaLoading}
+            className="px-4 py-2.5 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-bold disabled:opacity-60"
+          >
+            {isWaLoading ? 'Carregando...' : 'Atualizar'}
+          </button>
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2">
+            <label className="block text-xs font-bold text-gray-500 mb-2">Telefone (E.164)</label>
+            <input
+              value={waPhone}
+              onChange={(e) => setWaPhone(e.target.value)}
+              placeholder="+5516981109472"
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-lucrai-200"
+              disabled={isWaLoading}
+            />
+            <div className="text-xs text-gray-500 mt-2">
+              Status atual: <b className="text-gray-800">{waStatus ?? 'não conectado'}</b>
+            </div>
+          </div>
+
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={onGenerateWhatsAppCode}
+              disabled={isWaLoading}
+              className="w-full px-4 py-3 rounded-xl bg-lucrai-500 hover:bg-lucrai-600 text-white text-sm font-bold disabled:opacity-60"
+            >
+              Gerar código
+            </button>
+          </div>
+        </div>
+
+        {waCode ? (
+          <div className="mt-4 rounded-2xl border border-lucrai-200 bg-lucrai-50 p-4">
+            <div className="text-xs font-bold text-lucrai-700 uppercase tracking-wide">Seu código</div>
+            <div className="mt-1 text-3xl font-extrabold text-gray-900 tabular-nums tracking-widest">{waCode}</div>
+            <div className="mt-2 text-sm text-gray-700">
+              Envie este código para o bot no WhatsApp. Validade: <b>10 minutos</b>.
+            </div>
+            {waExpiresAt ? <div className="text-xs text-gray-500 mt-1">Expira em: {String(waExpiresAt)}</div> : null}
+          </div>
+        ) : (
+          <div className="mt-4 text-sm text-gray-500">
+            Dica: gere o código, copie e envie pelo WhatsApp para completar a verificação.
+          </div>
+        )}
       </div>
     </div>
   );
