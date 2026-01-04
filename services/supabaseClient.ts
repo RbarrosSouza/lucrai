@@ -12,11 +12,11 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  // Erro explícito pra evitar “silêncio” em produção.
-  throw new Error(
-    'Supabase não configurado. Defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env.local.'
-  );
-}
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Não derruba a aplicação inteira se o ambiente estiver sem env.
+// Isso permite mostrar uma tela amigável de configuração.
+const safeUrl = supabaseUrl ?? 'http://localhost:54321/invalid-supabase-url';
+const safeKey = supabaseAnonKey ?? 'invalid-supabase-anon-key';
+
+export const supabase = createClient(safeUrl, safeKey);
