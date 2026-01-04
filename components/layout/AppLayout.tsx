@@ -16,6 +16,7 @@ import {
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
+import { OrgProfileProvider, useOrgProfile } from '../org/OrgProfileContext';
 
 const NavItem = ({
   to,
@@ -49,8 +50,9 @@ const NavItem = ({
   );
 };
 
-export default function AppLayout() {
+function AppLayoutBody() {
   const { user, signOut } = useAuth();
+  const { logoSignedUrl } = useOrgProfile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const settingsActive = location.pathname === '/settings';
@@ -82,11 +84,16 @@ export default function AppLayout() {
       >
         <div className="flex items-center justify-between h-24 px-6 border-b border-gray-100">
           <div className="flex items-center">
-            <img
-              src="/brand/logo.png"
-              alt="Lucraí"
-              className="h-14 md:h-16 w-auto object-contain"
-            />
+            <div className="flex items-center gap-3">
+              <img src="/brand/logo.png" alt="Lucraí" className="h-14 md:h-16 w-auto object-contain" />
+              {logoSignedUrl ? (
+                <img
+                  src={logoSignedUrl}
+                  alt="Logo da empresa"
+                  className="h-10 w-10 rounded-xl object-cover border border-gray-200 bg-white"
+                />
+              ) : null}
+            </div>
           </div>
 
           <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-500">
@@ -205,6 +212,14 @@ export default function AppLayout() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function AppLayout() {
+  return (
+    <OrgProfileProvider>
+      <AppLayoutBody />
+    </OrgProfileProvider>
   );
 }
 
