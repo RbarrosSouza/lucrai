@@ -12,8 +12,31 @@ import AppLayout from './components/layout/AppLayout';
 import { AuthProvider } from './components/auth/AuthContext';
 import { RequireAuth } from './components/auth/RequireAuth';
 import AuthPage from './components/auth/AuthPage';
+import { isSupabaseConfigured } from './services/supabaseClient';
+
+function SupabaseNotConfigured() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-lg bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
+        <div className="text-xl font-extrabold text-gray-900">Supabase não configurado</div>
+        <div className="mt-2 text-sm text-gray-600">
+          Configure as variáveis no seu <code className="font-mono">.env.local</code> (dev) ou no ambiente de build (prod):
+        </div>
+        <pre className="mt-4 text-xs bg-gray-50 border border-gray-200 rounded-xl p-4 overflow-auto">
+VITE_SUPABASE_URL=...
+VITE_SUPABASE_ANON_KEY=...
+        </pre>
+        <div className="mt-3 text-xs text-gray-500">
+          Dica: em Vite, variáveis <code className="font-mono">VITE_*</code> são injetadas no build. Se você está vendo isso em produção,
+          precisa definir essas variáveis no pipeline (ex.: GitHub Actions).
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const App: React.FC = () => {
+  if (!isSupabaseConfigured) return <SupabaseNotConfigured />;
   return (
     <HashRouter>
       <AuthProvider>
