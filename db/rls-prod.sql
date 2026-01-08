@@ -100,13 +100,18 @@ as $$
 declare
   org uuid;
 begin
+  -- Se o org_id já veio preenchido (ex.: seeds / integrações / RPCs), não exigimos contexto do usuário.
+  -- Isso evita falhas no signup (trigger em auth.users) e permite operações server-side com org_id explícito.
+  if new.org_id is not null then
+    return new;
+  end if;
+
   org := public.current_org_id();
   if org is null then
     raise exception 'Usuário sem organização ativa (profiles.active_org_id).';
   end if;
-  if new.org_id is null then
-    new.org_id := org;
-  end if;
+
+  new.org_id := org;
   return new;
 end;
 $$;

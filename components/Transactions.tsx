@@ -160,7 +160,7 @@ const Transactions: React.FC = () => {
             : fullCreate;
 
           if (createRes.error) throw createRes.error;
-          const row = createRes.data?.[0];
+          const row = (createRes.data as any)?.[0] as any;
           if (row) {
             const def: Supplier = {
               id: row.id,
@@ -191,7 +191,7 @@ const Transactions: React.FC = () => {
 
         if (!hasExpectedDre) {
           const seed = await trySeedDefaultDre();
-          if (!seed.ok) {
+          if (seed.ok === false) {
             console.warn('Não consegui fazer seed da DRE automaticamente:', seed.reason);
           } else {
             const cat2 = await supabase

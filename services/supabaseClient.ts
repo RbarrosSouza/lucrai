@@ -3,9 +3,10 @@ import { createClient } from '@supabase/supabase-js';
 /**
  * SUPABASE CLIENT
  *
- * Não comitamos chaves no código. Configure no seu `.env.local`:
- * - VITE_SUPABASE_URL="https://imapsdooukuiwcfwwdey.supabase.co"
- * - VITE_SUPABASE_ANON_KEY="sb_publishable_r7LWoYPNEa_AJ8I-AeTJ9g_RJI_ioI5"
+ * Não comitamos chaves no código. Configure no seu `.env.local` (dev) e/ou nas
+ * variáveis de ambiente do seu provedor (prod):
+ * - VITE_SUPABASE_URL="https://<ref>.supabase.co"
+ * - VITE_SUPABASE_ANON_KEY="sb_publishable_..."
  *
  * Schema do banco: veja `db/schema.sql`.
  */
