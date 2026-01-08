@@ -9,7 +9,13 @@ type AuthContextValue = {
   session: Session | null;
   user: User | null;
   signInWithPassword: (params: { email: string; password: string }) => Promise<void>;
-  signUp: (params: { email: string; password: string; companyName?: string }) => Promise<void>;
+  signUp: (params: {
+    email: string;
+    password: string;
+    companyName?: string;
+    phoneE164?: string;
+    displayName?: string;
+  }) => Promise<Session | null>;
   signOut: () => Promise<void>;
 };
 
@@ -59,15 +65,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       },
-      signUp: async ({ email, password, companyName }) => {
-        const { error } = await supabase.auth.signUp({
+      signUp: async ({ email, password, companyName, phoneE164, displayName }) => {
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            data: companyName ? { company_name: companyName } : undefined,
+            data: {
+              ...(companyName ? { company_name: companyName } : {}),
+              ...(phoneE164 ? { phone_e164: phoneE164 } : {}),
+              ...(displayName ? { display_name: displayName } : {}),
+            },
           },
         });
         if (error) throw error;
+        return data.session ?? null;
       },
       signOut: async () => {
         const { error } = await supabase.auth.signOut();
@@ -84,6 +95,7 @@ export function useAuth() {
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 }
+
 
 
 

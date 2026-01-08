@@ -1,12 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { ImageUp, Loader2, Save, Smartphone, Trash2 } from 'lucide-react';
+import { ImageUp, Loader2, Plus, Save, Smartphone, Trash2 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { formatSupabaseError } from '../../../services/formatSupabaseError';
 import { useOrgProfile } from '../../org/OrgProfileContext';
+import { normalizePhoneE164 } from '../../../services/phone';
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2MB
 const ALLOWED_MIME = new Set(['image/png', 'image/jpeg', 'image/webp']);
-const E164_RE = /^\+[1-9]\d{7,14}$/;
 
 function extFromMime(mime: string) {
   if (mime === 'image/png') return 'png';
@@ -23,6 +23,7 @@ export function MyProfileSettings() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [waPhone, setWaPhone] = useState('');
+  const [waPhones, setWaPhones] = useState<Array<{ phone_e164: string; status: string }>>([]);
   const [waCode, setWaCode] = useState<string | null>(null);
   const [waExpiresAt, setWaExpiresAt] = useState<string | null>(null);
   const [waStatus, setWaStatus] = useState<string | null>(null);
@@ -45,10 +46,13 @@ export function MyProfileSettings() {
         .from('whatsapp_identities')
         .select('phone_e164,status')
         .eq('org_id', orgId)
-        .maybeSingle();
+        .order('created_at', { ascending: true });
       if (res.error) throw res.error;
-      if (res.data?.phone_e164) setWaPhone(res.data.phone_e164);
-      setWaStatus(res.data?.status ?? null);
+      const rows = (res.data as any[]) ?? [];
+      setWaPhones(rows.map((r) => ({ phone_e164: r.phone_e164, status: r.status })));
+      // mantém compat: preenche input com o 1º se existir
+      if (rows[0]?.phone_e164) setWaPhone(rows[0].phone_e164);
+      setWaStatus(rows[0]?.status ?? null);
     } catch (e: any) {
       // não bloqueia a tela se ainda não tiver a parte 2
     } finally {
@@ -133,24 +137,37 @@ export function MyProfileSettings() {
 
   const onGenerateWhatsAppCode = async () => {
     if (!orgId) return;
-    const phone = waPhone.trim();
-    if (!E164_RE.test(phone)) {
-      alert('Telefone inválido. Use formato E.164 (ex: +5516981109472).');
-      return;
-    }
+    const phone = normalizePhoneE164(waPhone);
+    if (phone.ok === false) return alert(phone.reason);
     try {
       setIsWaLoading(true);
       setWaCode(null);
       setWaExpiresAt(null);
-      const res = await supabase.rpc('whatsapp_generate_verification_code', { _phone_e164: phone });
+      const res = await supabase.rpc('whatsapp_generate_verification_code', { _phone_e164: phone.value });
       if (res.error) throw res.error;
       const row = Array.isArray(res.data) ? res.data[0] : res.data;
       setWaCode(row?.code ?? null);
       setWaExpiresAt(row?.expires_at ?? null);
       setWaStatus('pending');
       alert('Código gerado. Envie pelo WhatsApp para conectar.');
+      await loadWhatsAppStatus();
     } catch (e: any) {
       alert(`Erro ao gerar código.\n\n${formatSupabaseError(e)}`);
+    } finally {
+      setIsWaLoading(false);
+    }
+  };
+
+  const onRemoveWhatsApp = async (phoneE164: string) => {
+    if (!confirm('Remover este número de WhatsApp da empresa?')) return;
+    try {
+      setIsWaLoading(true);
+      const del = await supabase.from('whatsapp_identities').delete().eq('phone_e164', phoneE164);
+      if (del.error) throw del.error;
+      await loadWhatsAppStatus();
+      alert('Número removido.');
+    } catch (e: any) {
+      alert(`Erro ao remover.\n\n${formatSupabaseError(e)}`);
     } finally {
       setIsWaLoading(false);
     }
@@ -295,7 +312,42 @@ export function MyProfileSettings() {
           </button>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="mt-4">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Números vinculados (até 2)</div>
+            {waPhones.length ? (
+              <div className="mt-3 space-y-2">
+                {waPhones.map((w) => (
+                  <div key={w.phone_e164} className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-3 py-2">
+                    <div className="min-w-0">
+                      <div className="text-sm font-bold text-gray-900">{w.phone_e164}</div>
+                      <div className="text-xs text-gray-500">
+                        Status: <b className="text-gray-800">{w.status}</b>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => onRemoveWhatsApp(w.phone_e164)}
+                      disabled={isWaLoading}
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 text-sm font-bold disabled:opacity-60"
+                    >
+                      <Trash2 size={16} />
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-2 text-sm text-gray-600">Nenhum número vinculado ainda.</div>
+            )}
+            {waPhones.length >= 2 ? (
+              <div className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg p-2">
+                Limite atingido: você pode ter no máximo <b>2</b> números por empresa.
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2">
             <label className="block text-xs font-bold text-gray-500 mb-2">Telefone (E.164)</label>
             <input
@@ -314,11 +366,15 @@ export function MyProfileSettings() {
             <button
               type="button"
               onClick={onGenerateWhatsAppCode}
-              disabled={isWaLoading}
+              disabled={isWaLoading || waPhones.length >= 2}
               className="w-full px-4 py-3 rounded-xl bg-lucrai-500 hover:bg-lucrai-600 text-white text-sm font-bold disabled:opacity-60"
             >
-              Gerar código
+              <span className="inline-flex items-center justify-center gap-2">
+                <Plus size={16} />
+                Adicionar telefone
+              </span>
             </button>
+          </div>
           </div>
         </div>
 

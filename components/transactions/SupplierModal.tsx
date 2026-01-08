@@ -93,7 +93,7 @@ export function SupplierModal({
         const minRes = await runInsert('id,name,document,email', minimalPayload);
         if (minRes.error) throw minRes.error;
 
-        const row = minRes.data?.[0];
+        const row = (minRes.data as any)?.[0] as any;
         if (!row) throw new Error('Fornecedor não retornado após criação.');
 
         onCreated({
@@ -115,7 +115,7 @@ export function SupplierModal({
         return;
       }
 
-      const row = fullRes.data?.[0];
+      const row = (fullRes.data as any)?.[0] as any;
       if (!row) throw new Error('Fornecedor não retornado após criação.');
 
       onCreated({

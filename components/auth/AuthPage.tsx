@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { SignupOnboardingModal } from './SignupOnboardingModal';
 
 type Mode = 'login' | 'signup';
 
@@ -23,11 +24,11 @@ export default function AuthPage({ mode }: { mode: Mode }) {
     return typeof st.from === 'string' ? st.from : '/';
   }, [location.state]);
 
-  const [companyName, setCompanyName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   const isSignup = mode === 'signup';
 
@@ -36,15 +37,14 @@ export default function AuthPage({ mode }: { mode: Mode }) {
     setError(null);
 
     if (!email.trim() || !password) return;
-    if (isSignup && !companyName.trim()) return;
 
     try {
-      setIsLoading(true);
       if (isSignup) {
-        await signUp({ email, password, companyName: companyName.trim() });
-        // Em muitos projetos o signup exige confirmação por email.
-        navigate('/login', { replace: true, state: { justSignedUp: true } });
+        // Onboarding step-by-step acontece no modal (empresa + nome + WhatsApp).
+        setIsOnboardingOpen(true);
+        return;
       } else {
+        setIsLoading(true);
         await signInWithPassword({ email, password });
         navigate(from, { replace: true });
       }
@@ -57,7 +57,7 @@ export default function AuthPage({ mode }: { mode: Mode }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md relative">
         <div className="bg-white border border-gray-200 shadow-sm rounded-3xl p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -81,23 +81,14 @@ export default function AuthPage({ mode }: { mode: Mode }) {
 
           {status === 'unauthenticated' && (location.state as any)?.justSignedUp && (
             <div className="mb-4 rounded-xl border border-lucrai-200 bg-lucrai-50 px-4 py-3 text-sm text-gray-700">
-              Conta criada! Se seu projeto exigir confirmação por email, confirme antes de entrar.
+              Conta criada!
+              {(location.state as any)?.needsEmailConfirmation
+                ? ' Confirme seu email e depois entre para concluir a configuração do WhatsApp.'
+                : ' Entre para continuar.'}
             </div>
           )}
 
           <form onSubmit={onSubmit} className="space-y-4">
-            {isSignup && (
-              <div>
-                <label className="block text-xs font-bold text-gray-500 mb-1">Empresa</label>
-                <input
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Ex.: Lucraí Clínica"
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:bg-white focus:border-lucrai-500 focus:ring-lucrai-200"
-                />
-              </div>
-            )}
-
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">Email</label>
               <input
@@ -128,11 +119,11 @@ export default function AuthPage({ mode }: { mode: Mode }) {
                 isLoading ||
                 !email.trim() ||
                 !password ||
-                (isSignup && !companyName.trim())
+                false
               }
               className="w-full rounded-xl bg-lucrai-500 hover:bg-lucrai-600 text-white py-2.5 text-sm font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Aguarde…' : isSignup ? 'Criar conta' : 'Entrar'}
+              {isLoading ? 'Aguarde…' : isSignup ? 'Continuar' : 'Entrar'}
             </button>
           </form>
 
@@ -159,6 +150,19 @@ export default function AuthPage({ mode }: { mode: Mode }) {
           Dica: se você ativou confirmação por email no Supabase, finalize a confirmação antes de entrar.
         </p>
       </div>
+
+      {/* Modal de onboarding do signup */}
+      {isSignup ? (
+        <SignupOnboardingModal
+          isOpen={isOnboardingOpen}
+          onClose={() => setIsOnboardingOpen(false)}
+          onBack={() => setIsOnboardingOpen(false)}
+          onDone={() => navigate('/', { replace: true })}
+          email={email}
+          password={password}
+          signUp={signUp as any}
+        />
+      ) : null}
     </div>
   );
 }

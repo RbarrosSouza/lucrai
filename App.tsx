@@ -12,6 +12,7 @@ import AppLayout from './components/layout/AppLayout';
 import { AuthProvider } from './components/auth/AuthContext';
 import { RequireAuth } from './components/auth/RequireAuth';
 import AuthPage from './components/auth/AuthPage';
+import SignupPhonePage from './components/auth/SignupPhonePage';
 import { isSupabaseConfigured } from './services/supabaseClient';
 
 function SupabaseNotConfigured() {
@@ -27,8 +28,8 @@ VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
         </pre>
         <div className="mt-3 text-xs text-gray-500">
-          Dica: em Vite, variáveis <code className="font-mono">VITE_*</code> são injetadas no build. Se você está vendo isso em produção,
-          precisa definir essas variáveis no pipeline (ex.: GitHub Actions).
+          Dica: em Vite, variáveis <code className="font-mono">VITE_*</code> são injetadas no build. No Vercel: Project → Settings → Environment
+          Variables, depois faça um <strong>Redeploy</strong>. Garanta também que o Build Command é <code className="font-mono">npm run build</code>.
         </div>
       </div>
     </div>
@@ -43,6 +44,14 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/login" element={<AuthPage mode="login" />} />
           <Route path="/signup" element={<AuthPage mode="signup" />} />
+          <Route
+            path="/signup/phone"
+            element={
+              <RequireAuth>
+                <SignupPhonePage />
+              </RequireAuth>
+            }
+          />
 
           <Route
             element={
