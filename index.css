@@ -1,6 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* =========================================================
+   Base: Premium background + tipografia global
+   ========================================================= */
+html,
+body {
+  font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji';
+}
+
+body {
+  background-color: #f7f9f8;
+  background-image:
+    radial-gradient(circle at 15% 50%, rgba(1, 100, 180, 0.035) 0%, transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(11, 36, 71, 0.03) 0%, transparent 25%);
+  background-attachment: fixed;
+}
 
 /* Scrollbar (leve e consistente) */
 ::-webkit-scrollbar {
@@ -18,4 +37,28 @@
   background: #94a3b8;
 }
 
+/* =========================================================
+   Tipografia local (somente Lançamentos)
+   ========================================================= */
+.transactions-page {
+  font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji';
+}
 
+.transactions-page .tx-tracking {
+  letter-spacing: -0.02em;
+}
+
+/* Hide scrollbar utility class */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area padding for mobile bottom nav */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}

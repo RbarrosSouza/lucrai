@@ -120,9 +120,9 @@ export default function Reports() {
 
     return (
       <React.Fragment key={category.id}>
-        <tr className={`hover:bg-gray-50 transition-colors ${level === 0 ? 'bg-gray-50/60 font-medium' : ''}`}>
+        <tr className={`hover:bg-slate-50 transition-colors ${level === 0 ? 'bg-gray-50/60 font-medium' : ''}`}>
           <td
-            className="px-6 py-2 whitespace-nowrap text-sm text-gray-900 border-l-4 border-transparent hover:border-lucrai-400 cursor-pointer"
+            className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-l-4 border-transparent hover:border-lucrai-400 cursor-pointer"
             onClick={handleClick}
           >
             <div className="flex items-center" style={{ paddingLeft: `${level * 20}px` }}>
@@ -145,14 +145,14 @@ export default function Reports() {
             </div>
           </td>
           <td
-            className={`px-6 py-2 whitespace-nowrap text-sm text-right ${
+            className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
               'text-gray-800'
             }`}
           >
             {effectiveSign === 'MINUS' ? '- ' : ''}
             {formatMoney(Math.abs(displayValue))}
           </td>
-          <td className="px-6 py-2 whitespace-nowrap text-sm text-right text-gray-400">-</td>
+          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-400">-</td>
         </tr>
 
         {hasChildren && isExpanded &&
@@ -204,9 +204,9 @@ export default function Reports() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Valor (R$)</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">AV %</th>
+              <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Descrição</th>
+              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Valor (R$)</th>
+              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">AV %</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
@@ -280,11 +280,11 @@ export default function Reports() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-lucrai-700 uppercase">Entradas</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-600 uppercase">Saídas</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Saldo do Dia</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase">Saldo Acumulado</th>
+              <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Data</th>
+              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Entradas</th>
+              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saídas</th>
+              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo do Dia</th>
+              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo Acumulado</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
@@ -365,7 +365,7 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white/80 backdrop-blur rounded-3xl shadow-premium border border-white/60 overflow-hidden">
         <div className="border-b border-gray-200 bg-gray-50/60">
           <nav className="-mb-px flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
             <button

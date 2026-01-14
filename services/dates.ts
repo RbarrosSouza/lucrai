@@ -69,6 +69,18 @@ export function addMonthsISO(dateISO: string, months: number): string {
   return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`;
 }
 
+/**
+ * Adiciona dias em uma data YYYY-MM-DD sem risco de shift por UTC.
+ * Usa métodos UTC para estabilidade e retorna YYYY-MM-DD.
+ */
+export function addDaysISO(dateISO: string, days: number): string {
+  const p = parseISODate(dateISO);
+  if (!p) return dateISO;
+  const dt = new Date(Date.UTC(p.y, p.m - 1, p.d, 12, 0, 0)); // meio-dia UTC evita edge cases
+  dt.setUTCDate(dt.getUTCDate() + days);
+  return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`;
+}
+
 export function firstDayOfCurrentMonthISO(now = new Date()): string {
   const today = todayISOInSaoPaulo(now);
   const p = parseISODate(today);

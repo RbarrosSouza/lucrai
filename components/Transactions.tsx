@@ -1,9 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Search, Plus, Filter, CheckCircle, Clock, AlertTriangle, 
   Trash2, X, Calendar, DollarSign, Tag, Briefcase, User, 
   Building, Repeat, Layers, ArrowRight, Save, AlertCircle, ChevronDown,
-  CreditCard, CalendarDays, Edit2, FileText, Landmark, RefreshCw
+  CreditCard, CalendarDays, Edit2, FileText, Landmark, RefreshCw, MoreVertical
 } from 'lucide-react';
 import { Transaction, TransactionStatus, TransactionType, Supplier, PaymentMethod, BankAccount, CostCenter, Category } from '../types';
 import { supabase } from '../services/supabaseClient';
@@ -11,7 +12,14 @@ import { SupplierModal } from './transactions/SupplierModal';
 import { formatSupabaseError } from '../services/formatSupabaseError';
 import { CostCenterSelect } from './transactions/CostCenterSelect';
 import { SupplierSelect } from './transactions/SupplierSelect';
-import { addMonthsISO, firstDayOfCurrentMonthISO, formatDateBR, lastDayOfCurrentMonthISO, todayISOInSaoPaulo } from '../services/dates';
+import {
+  addDaysISO,
+  addMonthsISO,
+  firstDayOfCurrentMonthISO,
+  formatDateBR,
+  lastDayOfCurrentMonthISO,
+  todayISOInSaoPaulo,
+} from '../services/dates';
 
 // --- HELPER FUNCTIONS ---
 
@@ -39,6 +47,8 @@ async function trySeedDefaultDre(): Promise<{ ok: true } | { ok: false; reason: 
 // --- COMPONENT ---
 
 const Transactions: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   // --- GLOBAL DATA ---
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -63,11 +73,17 @@ const Transactions: React.FC = () => {
     type: 'ALL' as 'ALL' | 'INCOME' | 'EXPENSE'
   });
 
+  // Filtros vindos via URL (drilldown do Dashboard)
+  const [urlCategoryId, setUrlCategoryId] = useState<string>('');
+  const [urlStatusOpen, setUrlStatusOpen] = useState<boolean>(false); // PENDING + LATE
+  const [urlDueNext7, setUrlDueNext7] = useState<boolean>(false);
+
   // --- MODAL STATE ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [defaultSupplierId, setDefaultSupplierId] = useState<string>('');
+  const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
 
   // --- FORM STATE ---
   const [launchMode, setLaunchMode] = useState<'SINGLE' | 'INSTALLMENT' | 'RECURRENT'>('SINGLE');
@@ -98,13 +114,102 @@ const Transactions: React.FC = () => {
   useEffect(() => {
     if (status !== TransactionStatus.PAID) return;
     if (datePayment) return;
-    setDatePayment(todayISOInSaoPaulo());
-  }, [status, datePayment]);
+    // Regra: se marcar como PAGO e não informar data, assume vencimento; se não houver, hoje.
+    setDatePayment(dateDue || todayISOInSaoPaulo());
+  }, [status, datePayment, dateDue]);
 
   // --- INITIAL LOAD ---
   useEffect(() => {
     fetchInitialData();
   }, []);
+
+  // Mobile: abrir modal de criação via bottom tab "+"
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    if (sp.get('new') !== '1') return;
+    if (isModalOpen) return;
+    handleResetForm();
+    // remove o parâmetro para evitar reabrir ao voltar/refresh
+    navigate('/transactions', { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
+  // Drilldown: aplicar filtros a partir de query params (Dashboard → Lançamentos)
+  useEffect(() => {
+    const sp = new URLSearchParams(location.search);
+    if (!sp.toString()) {
+      setUrlCategoryId('');
+      setUrlStatusOpen(false);
+      setUrlDueNext7(false);
+      return;
+    }
+
+    const start = sp.get('start');
+    const end = sp.get('end');
+    const costCenterIdParam = sp.get('costCenterId');
+    const categoryIdParam = sp.get('categoryId');
+    const statusParam = sp.get('status');
+    const dueParam = sp.get('due');
+    const typeParam = sp.get('type');
+
+    setUrlCategoryId(categoryIdParam ?? '');
+    setUrlStatusOpen(statusParam === 'open');
+    setUrlDueNext7(dueParam === 'next7');
+
+    setFilters((prev) => {
+      const next = { ...prev };
+      if (start && /^\d{4}-\d{2}-\d{2}$/.test(start)) next.startDate = start;
+      if (end && /^\d{4}-\d{2}-\d{2}$/.test(end)) next.endDate = end;
+      if (costCenterIdParam) next.costCenterId = costCenterIdParam;
+      if (typeParam === 'INCOME' || typeParam === 'EXPENSE') next.type = typeParam;
+      if (statusParam === 'PENDING' || statusParam === 'PAID' || statusParam === 'LATE') next.status = statusParam;
+      // status=open e due=next7 são tratados via urlStatusOpen/urlDueNext7 (filtro composto)
+      return next;
+    });
+  }, [location.search]);
+
+  // Fecha menu de ações ao clicar fora / apertar ESC
+  useEffect(() => {
+    if (!openRowMenuId) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenRowMenuId(null);
+    };
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      // se clicou em algo dentro do menu ou botão do menu, não fecha
+      if (target.closest?.('[data-row-menu-root="true"]')) return;
+      setOpenRowMenuId(null);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('mousedown', onMouseDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('mousedown', onMouseDown);
+    };
+  }, [openRowMenuId]);
+
+  const supplierById = useMemo(() => {
+    const map = new Map<string, Supplier>();
+    for (const s of suppliers) map.set(s.id, s);
+    return map;
+  }, [suppliers]);
+
+  const getSupplierDisplayName = (t: Transaction): string => {
+    const direct = (t.supplierName ?? '').trim();
+    if (direct) return direct;
+    const byId = t.supplierId ? supplierById.get(t.supplierId) : undefined;
+    const fromLookup = (byId?.name ?? '').trim();
+    if (fromLookup) return fromLookup;
+    return 'Fornecedor não informado';
+  };
+
+  const formatAmount = (t: Transaction): string => {
+    const sign = t.type === TransactionType.INCOME ? '+' : '-';
+    const money = Number(t.amount ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    // Importante: sem espaço “solto” antes de R$ para evitar quebra em telas menores
+    return `${sign} R$ ${money}`;
+  };
 
   const fetchInitialData = async () => {
     setIsLoading(true);
@@ -271,6 +376,21 @@ const Transactions: React.FC = () => {
 
   const isExpense = transactionType === TransactionType.EXPENSE;
 
+  const dashboardDrilldownActive = useMemo(() => {
+    const sp = new URLSearchParams(location.search);
+    return Boolean(
+      urlCategoryId ||
+        urlStatusOpen ||
+        urlDueNext7 ||
+        sp.get('costCenterId') ||
+        sp.get('start') ||
+        sp.get('end') ||
+        sp.get('type') ||
+        sp.get('status') ||
+        sp.get('due')
+    );
+  }, [location.search, urlCategoryId, urlDueNext7, urlStatusOpen]);
+
   const getDefaultCostCenterForCategory = (categoryId: string): string => {
     return costCenters.find((cc) => cc.isActive && cc.dreCategoryId === categoryId)?.id ?? '';
   };
@@ -278,6 +398,12 @@ const Transactions: React.FC = () => {
   // 1. Filter Logic
   const filteredTransactions = useMemo(() => {
     return transactions.filter(t => {
+      // Dashboard drilldown: categoria específica (id da DRE folha)
+      if (urlCategoryId && t.categoryId !== urlCategoryId) return false;
+
+      // Dashboard drilldown: "abertos" (PENDING + LATE)
+      if (urlStatusOpen && !(t.status === TransactionStatus.PENDING || t.status === TransactionStatus.LATE)) return false;
+
       // Search Term (Desc, Supplier, Doc)
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = 
@@ -293,6 +419,13 @@ const Transactions: React.FC = () => {
       const compareDate = t.date;
       if (compareDate < filters.startDate || compareDate > filters.endDate) return false;
 
+      // Dashboard drilldown: vencendo em 7 dias (por vencimento)
+      if (urlDueNext7) {
+        const today = todayISOInSaoPaulo();
+        const end = addDaysISO(today, 7);
+        if (compareDate < today || compareDate > end) return false;
+      }
+
       if (filters.type !== 'ALL' && t.type !== filters.type) return false;
       if (filters.status && t.status !== filters.status) return false;
       if (filters.supplierId && t.supplierId !== filters.supplierId) return false;
@@ -302,7 +435,7 @@ const Transactions: React.FC = () => {
 
       return true;
     });
-  }, [transactions, searchTerm, filters]);
+  }, [transactions, searchTerm, filters, urlCategoryId, urlStatusOpen, urlDueNext7]);
 
   // 2. Summary Logic
   const summary = useMemo(() => {
@@ -413,8 +546,8 @@ const Transactions: React.FC = () => {
         return;
       }
     }
-    if (status === TransactionStatus.PAID && (!datePayment || !bankAccountId)) {
-      alert("Para lançamentos PAGOS, é obrigatório informar Data de Pagamento e Conta Bancária.");
+    if (status === TransactionStatus.PAID && !bankAccountId) {
+      alert("Para lançamentos PAGOS, é obrigatório informar a Conta Bancária.");
       return;
     }
 
@@ -429,14 +562,24 @@ const Transactions: React.FC = () => {
     }
     
     // DB Object Mapping
-    const createDbObject = (overrides: any = {}) => ({
+    // Regra de normalização (Fluxo de Caixa):
+    // - Se status=PAID e payment_date vazio -> usa date (vencimento); se também não houver, usa hoje.
+    const createDbObject = (overrides: any = {}) => {
+      const resolvedStatus = overrides.status ?? status;
+      const resolvedDueDate = overrides.date ?? dateDue;
+      const resolvedCompetenceDate = overrides.competenceDate ?? dateCompetence;
+      const resolvedPaymentDate =
+        overrides.payment_date ??
+        (resolvedStatus === TransactionStatus.PAID ? (datePayment || resolvedDueDate || todayISOInSaoPaulo()) : null);
+
+      return {
       description: desc,
       amount: overrides.amount || totalVal,
-      date: overrides.date || dateDue,
-      competence_date: overrides.competenceDate || dateCompetence,
-      payment_date: status === TransactionStatus.PAID ? datePayment : null,
+      date: resolvedDueDate,
+      competence_date: resolvedCompetenceDate,
+      payment_date: resolvedPaymentDate,
       type: transactionType,
-      status: overrides.status || status,
+      status: resolvedStatus,
       category_id: derivedCategoryId,
       cost_center_id: effectiveCostCenterId,
       supplier_id: (formSupplierId || defaultSupplierId),
@@ -444,7 +587,8 @@ const Transactions: React.FC = () => {
       document_number: documentNumber,
       payment_method: paymentMethod || null,
       bank_account_id: bankAccountId || null
-    });
+      };
+    };
 
     try {
       setIsLoading(true);
@@ -471,7 +615,7 @@ const Transactions: React.FC = () => {
                amount: installmentVal,
                date: addMonths(dateDue, i),
                status: i === 0 ? status : TransactionStatus.PENDING,
-               payment_date: (i === 0 && status === TransactionStatus.PAID) ? datePayment : null
+               payment_date: (i === 0 && status === TransactionStatus.PAID) ? (datePayment || addMonths(dateDue, i) || todayISOInSaoPaulo()) : null
              }));
            }
         } else if (launchMode === 'RECURRENT') {
@@ -481,7 +625,7 @@ const Transactions: React.FC = () => {
                date: itemDate,
                competenceDate: itemDate,
                status: i === 0 ? status : TransactionStatus.PENDING,
-               payment_date: (i === 0 && status === TransactionStatus.PAID) ? datePayment : null
+               payment_date: (i === 0 && status === TransactionStatus.PAID) ? (datePayment || itemDate || todayISOInSaoPaulo()) : null
              }));
            }
         }
@@ -518,73 +662,154 @@ const Transactions: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 h-full flex flex-col">
+    <div className="transactions-page space-y-3 md:space-y-6 h-full flex flex-col">
       
-      {/* 1. SUMMARY CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: Pago no Mês */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+      {/* 1. SUMMARY CARDS - ultra compactos em mobile (horizontal scroll) */}
+      {/* Mobile: cards em linha horizontal com scroll */}
+      <div className="md:hidden flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+        <div className="flex-shrink-0 bg-white/80 backdrop-blur px-3 py-2 rounded-xl border border-white/60 shadow-sm flex items-center gap-2 min-w-[140px]">
+          <CheckCircle size={16} className="text-emerald-500 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[8px] uppercase tracking-wide font-bold text-slate-400 truncate">Realizado</p>
+            <p className="text-sm font-semibold text-slate-800 tabular-nums truncate">
+              R$ {summary.paidNet.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+        <div className="flex-shrink-0 bg-white/80 backdrop-blur px-3 py-2 rounded-xl border border-white/60 shadow-sm flex items-center gap-2 min-w-[140px]">
+          <Clock size={16} className="text-amber-500 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[8px] uppercase tracking-wide font-bold text-slate-400 truncate">Em Aberto</p>
+            <p className="text-sm font-semibold text-slate-800 tabular-nums truncate">
+              R$ {summary.openNet.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+        <div className="flex-shrink-0 bg-white/80 backdrop-blur px-3 py-2 rounded-xl border border-white/60 shadow-sm flex items-center gap-2 min-w-[140px]">
+          <AlertTriangle size={16} className="text-rose-500 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[8px] uppercase tracking-wide font-bold text-slate-400 truncate">Atrasado</p>
+            <p className="text-sm font-semibold text-slate-800 tabular-nums truncate">
+              R$ {summary.overdueValue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop: cards em grid normal */}
+      <div className="hidden md:grid grid-cols-3 gap-4">
+        <div className="bg-white/80 backdrop-blur p-6 rounded-3xl border border-white/60 shadow-premium flex items-center justify-between hover:-translate-y-1 hover:shadow-float transition-all">
            <div>
-             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Realizado (Pago)</p>
-             <h3 className="text-xl font-bold mt-1 text-gray-900">
+             <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Realizado (Pago)</p>
+             <h3 className="tx-tracking text-2xl font-light mt-2 text-slate-800 tabular-nums">
                R$ {summary.paidNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
              </h3>
            </div>
-           <div className="p-2 bg-lucrai-50 text-lucrai-700 rounded-lg">
+           <div className="p-3 rounded-3xl bg-slate-50 text-slate-400 border border-white/60">
              <CheckCircle size={20} />
            </div>
         </div>
-
-        {/* Card 2: Em Aberto */}
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+        <div className="bg-white/80 backdrop-blur p-6 rounded-3xl border border-white/60 shadow-premium flex items-center justify-between hover:-translate-y-1 hover:shadow-float transition-all">
            <div>
-             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Em Aberto (Previsto)</p>
-             <h3 className="text-xl font-bold mt-1 text-gray-900">
+             <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Em Aberto (Previsto)</p>
+             <h3 className="tx-tracking text-2xl font-light mt-2 text-slate-800 tabular-nums">
                R$ {summary.openNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
              </h3>
            </div>
-           <div className="p-2 bg-lucrai-50 text-lucrai-700 rounded-lg">
+           <div className="p-3 rounded-3xl bg-slate-50 text-slate-400 border border-white/60">
              <Clock size={20} />
            </div>
         </div>
-
-        {/* Card 3: Atrasado */}
-        <div className="bg-white p-4 rounded-xl border border-red-50 shadow-sm flex items-center justify-between">
+        <div className="bg-white/80 backdrop-blur p-6 rounded-3xl border border-white/60 shadow-premium flex items-center justify-between hover:-translate-y-1 hover:shadow-float transition-all">
            <div>
-             <p className="text-xs font-semibold text-red-400 uppercase tracking-wide">Atrasado / Vencido</p>
-             <h3 className="text-xl font-bold mt-1 text-gray-900">
+             <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Atrasado / Vencido</p>
+             <h3 className="tx-tracking text-2xl font-light mt-2 text-slate-800 tabular-nums">
                R$ {summary.overdueValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
              </h3>
-             <p className="text-[10px] text-red-400">{summary.overdueCount} lançamentos</p>
+             <p className="text-[10px] text-slate-500 mt-0.5">{summary.overdueCount} lançamentos</p>
            </div>
-           <div className="p-2 bg-rose-50 text-rose-700 rounded-lg">
+           <div className="p-3 rounded-3xl bg-slate-50 text-slate-400 border border-white/60">
              <AlertTriangle size={20} />
            </div>
         </div>
       </div>
 
-      {/* 2. ACTIONS & FILTERS BAR */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Quick Type Filter & Search */}
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
+      {/* 2. ACTIONS & FILTERS BAR - compacto mobile */}
+      <div className="bg-white/80 backdrop-blur p-2.5 md:p-5 rounded-xl md:rounded-3xl shadow-premium border border-white/60">
+         <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-stretch md:items-center justify-between">
+            {/* Mobile: Filtro de tipo + ícones na mesma linha */}
+            <div className="md:hidden flex items-center justify-between gap-2">
                {/* QUICK TYPE FILTER */}
-               <div className="flex bg-gray-100 p-1 rounded-lg self-start sm:self-center">
+               <div className="flex bg-gray-100 p-0.5 rounded-lg">
                   <button 
                     onClick={() => setFilters({...filters, type: 'ALL'})} 
-                    className={`px-4 py-2 text-xs font-bold rounded-md transition-all ${filters.type === 'ALL' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${filters.type === 'ALL' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
                   >
                     Tudo
                   </button>
                   <button 
                     onClick={() => setFilters({...filters, type: 'INCOME'})} 
-                    className={`px-4 py-2 text-xs font-bold rounded-md transition-all ${filters.type === 'INCOME' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${filters.type === 'INCOME' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500'}`}
                   >
                     Receitas
                   </button>
                   <button 
                     onClick={() => setFilters({...filters, type: 'EXPENSE'})} 
-                    className={`px-4 py-2 text-xs font-bold rounded-md transition-all ${filters.type === 'EXPENSE' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500 hover:text-gray-700'}`}
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${filters.type === 'EXPENSE' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500'}`}
+                  >
+                    Despesas
+                  </button>
+               </div>
+               {/* Ícones de ação */}
+               <div className="flex gap-1.5">
+                  <button 
+                    onClick={fetchInitialData}
+                    className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                    title="Atualizar"
+                  >
+                    <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+                  </button>
+                  <button 
+                    onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+                    className={`p-2 rounded-lg border transition-colors ${isFilterPanelOpen ? 'bg-lucrai-50 border-lucrai-200 text-lucrai-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                    title="Filtros"
+                  >
+                    <Filter size={14} />
+                  </button>
+               </div>
+            </div>
+
+            {/* Mobile: Campo de busca */}
+            <div className="md:hidden relative">
+               <Search size={14} className="absolute left-2.5 top-2.5 text-gray-400" />
+               <input
+                 type="text"
+                 placeholder="Buscar por descrição, fornecedor..."
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+                 className="pl-8 block w-full rounded-lg border-gray-200 border bg-gray-50 text-[11px] focus:border-lucrai-500 focus:ring-lucrai-200 p-2"
+               />
+            </div>
+
+            {/* Desktop: Layout original */}
+            <div className="hidden md:flex flex-row gap-4 flex-1">
+               {/* QUICK TYPE FILTER */}
+               <div className="flex bg-gray-100 p-1 rounded-lg self-center">
+                  <button 
+                    onClick={() => setFilters({...filters, type: 'ALL'})} 
+                    className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${filters.type === 'ALL' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Tudo
+                  </button>
+                  <button 
+                    onClick={() => setFilters({...filters, type: 'INCOME'})} 
+                    className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${filters.type === 'INCOME' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500 hover:text-gray-700'}`}
+                  >
+                    Receitas
+                  </button>
+                  <button 
+                    onClick={() => setFilters({...filters, type: 'EXPENSE'})} 
+                    className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${filters.type === 'EXPENSE' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500 hover:text-gray-700'}`}
                   >
                     Despesas
                   </button>
@@ -597,37 +822,50 @@ const Transactions: React.FC = () => {
                     placeholder="Buscar por descrição, fornecedor ou documento..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 block w-full rounded-lg border-gray-200 border bg-gray-50 text-sm focus:border-lucrai-500 focus:ring-lucrai-200 p-2.5"
+                    className="pl-10 block w-full rounded-xl border-gray-200 border bg-gray-50 text-sm focus:border-lucrai-500 focus:ring-lucrai-200 p-2.5"
                   />
                </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex gap-2 w-full md:w-auto justify-end">
+            {/* Desktop: Actions */}
+            <div className="hidden md:flex gap-2 justify-end">
                <button 
                  onClick={fetchInitialData}
-                 className="p-2.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                 className="p-2.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50"
                  title="Atualizar"
                >
                  <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
                </button>
                <button 
                  onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors ${isFilterPanelOpen ? 'bg-lucrai-50 border-lucrai-200 text-lucrai-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${isFilterPanelOpen ? 'bg-lucrai-50 border-lucrai-200 text-lucrai-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                >
                  <Filter size={16} />
-                 <span className="hidden sm:inline">Filtros Avançados</span>
+                 <span>Filtros Avançados</span>
                </button>
                <button 
                  onClick={handleResetForm}
-                 className="flex items-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-transform hover:scale-105"
+                 className="flex items-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-4 py-2.5 rounded-2xl text-sm font-bold shadow-float transition-all hover:-translate-y-0.5"
                >
                  <Plus size={16} />
-                 <span className="hidden sm:inline">Novo Lançamento</span>
-                 <span className="sm:hidden">Novo</span>
+                 <span>Novo Lançamento</span>
                </button>
             </div>
          </div>
+
+         {dashboardDrilldownActive ? (
+           <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-2xl bg-lucrai-50 border border-lucrai-100 px-4 py-3">
+             <div className="text-sm text-lucrai-800 font-semibold">
+               Filtro aplicado via Dashboard. Você pode ajustar nos filtros ou limpar para voltar ao padrão.
+             </div>
+             <button
+               onClick={() => navigate('/transactions', { replace: true })}
+               className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-white border border-lucrai-200 text-sm font-bold text-lucrai-700 hover:bg-white/80"
+             >
+               Limpar filtro
+             </button>
+           </div>
+         ) : null}
 
          {/* EXPANDABLE FILTER PANEL */}
          {isFilterPanelOpen && (
@@ -682,27 +920,80 @@ const Transactions: React.FC = () => {
       </div>
 
       {/* 3. TABLE */}
-      <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white/80 backdrop-blur rounded-xl md:rounded-3xl shadow-premium border border-white/60 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto">
           {isLoading && transactions.length === 0 ? (
             <div className="p-8 text-center text-gray-500">Carregando lançamentos...</div>
           ) : (
-          <table className="min-w-full divide-y divide-gray-200">
+          <>
+          {/* MOBILE: Cards View */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {filteredTransactions.map((t) => {
+              const cc = costCenters.find(c => c.id === t.costCenterId);
+              const supplierLabel = getSupplierDisplayName(t);
+              const isExpense = t.type === TransactionType.EXPENSE;
+              return (
+                <div 
+                  key={t.id} 
+                  className="p-3 hover:bg-slate-50 transition-colors active:bg-slate-100"
+                  onClick={() => handleEdit(t)}
+                >
+                  {/* Row 1: Descrição + Valor */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{t.description}</p>
+                      <p className="text-[11px] text-gray-500 truncate flex items-center gap-1 mt-0.5">
+                        <Building size={10} className="shrink-0" />
+                        {supplierLabel}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={`text-sm font-bold tabular-nums ${isExpense ? 'text-rose-600' : 'text-emerald-600'}`}>
+                        {isExpense ? '-' : '+'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Row 2: Data + Status + CC */}
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                      {formatDateBR(t.date)}
+                    </span>
+                    {renderStatusBadge(t.status, t.type)}
+                    {cc && (
+                      <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-[100px]">
+                        {cc.name}
+                      </span>
+                    )}
+                    {t.installments && (
+                      <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                        {t.installments.current}/{t.installments.total}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* DESKTOP: Table View */}
+          <table className="hidden md:table min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Vencimento</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Descrição / Documento</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Centro de Custo</th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase">Valor</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Ações</th>
+                <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Vencimento</th>
+                <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Descrição / Documento</th>
+                <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Centro de Custo</th>
+                <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Valor</th>
+                <th className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-400">Status</th>
+                <th className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-400">Ações</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {filteredTransactions.map((t) => {
                   const cc = costCenters.find(c => c.id === t.costCenterId);
+                  const supplierLabel = getSupplierDisplayName(t);
                   return (
-                    <tr key={t.id} className="hover:bg-lucrai-50/40 transition-colors group">
+                    <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
                       <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
                          <div className="font-medium">{formatDateBR(t.date)}</div>
                          <div className="text-xs text-gray-400">Comp: {formatDateBR(t.competenceDate)}</div>
@@ -711,8 +1002,9 @@ const Transactions: React.FC = () => {
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-gray-900">{t.description}</span>
                           <div className="flex items-center gap-2 mt-0.5">
-                             <span className="text-xs text-gray-500 flex items-center gap-1">
-                               <Building size={10} /> {t.supplierName}
+                             <span className="text-xs text-gray-500 inline-flex items-center gap-1 min-w-0">
+                               <Building size={10} className="shrink-0" />
+                               <span className="truncate">{supplierLabel}</span>
                              </span>
                              {t.documentNumber && (
                                <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 rounded flex items-center gap-0.5">
@@ -725,8 +1017,8 @@ const Transactions: React.FC = () => {
                       <td className="px-6 py-4 text-sm text-gray-500">
                         <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">{cc?.name || '-'}</span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-right font-bold text-gray-900">
-                        {t.type === TransactionType.INCOME ? '+' : '-'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      <td className="px-6 py-4 text-sm text-right font-bold text-gray-900 whitespace-nowrap tabular-nums tx-tracking">
+                        {formatAmount(t)}
                         {t.installments && (
                           <div className="text-[10px] font-normal text-gray-400 mt-0.5">
                             Parc. {t.installments.current}/{t.installments.total}
@@ -742,13 +1034,50 @@ const Transactions: React.FC = () => {
                          )}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => handleEdit(t)} className="p-1.5 text-lucrai-700 hover:bg-lucrai-50 rounded" title="Editar">
-                            <Edit2 size={16} />
+                        <div className="relative inline-flex" data-row-menu-root="true">
+                          <button
+                            type="button"
+                            onClick={() => setOpenRowMenuId((cur) => (cur === t.id ? null : t.id))}
+                            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-lucrai-200"
+                            aria-haspopup="menu"
+                            aria-expanded={openRowMenuId === t.id}
+                            title="Ações"
+                          >
+                            <MoreVertical size={16} />
                           </button>
-                          <button onClick={() => handleDelete(t.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Excluir">
-                            <Trash2 size={16} />
-                          </button>
+
+                          {openRowMenuId === t.id ? (
+                            <div
+                              role="menu"
+                              aria-label="Ações do lançamento"
+                              className="absolute right-0 top-10 z-20 w-40 rounded-xl border border-gray-200 bg-white shadow-xl overflow-hidden"
+                            >
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setOpenRowMenuId(null);
+                                  handleEdit(t);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 inline-flex items-center gap-2"
+                              >
+                                <Edit2 size={14} className="text-gray-500" />
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setOpenRowMenuId(null);
+                                  handleDelete(t.id);
+                                }}
+                                className="w-full px-3 py-2 text-left text-sm text-rose-700 hover:bg-rose-50 inline-flex items-center gap-2"
+                              >
+                                <Trash2 size={14} className="text-rose-600" />
+                                Excluir
+                              </button>
+                            </div>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -756,6 +1085,7 @@ const Transactions: React.FC = () => {
                 })}
             </tbody>
           </table>
+          </>
           )}
           
           {filteredTransactions.length === 0 && !isLoading && (
@@ -777,7 +1107,7 @@ const Transactions: React.FC = () => {
             
             {/* Header */}
             <div className="flex justify-between items-center px-6 pt-6 pb-2">
-               <h3 className="text-xl font-bold text-gray-900">{editingId ? 'Editar Lançamento' : 'Novo Lançamento'}</h3>
+               <h3 className="tx-tracking text-xl font-bold text-gray-900">{editingId ? 'Editar Lançamento' : 'Novo Lançamento'}</h3>
                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors">
                  <X size={20} />
                </button>
@@ -807,12 +1137,12 @@ const Transactions: React.FC = () => {
                     </button>
                  </div>
                  <div className="relative w-full flex justify-center items-center">
-                    <span className="text-3xl font-bold mr-2 text-lucrai-600">R$</span>
+                    <span className="tx-tracking text-3xl font-bold mr-2 text-lucrai-600">R$</span>
                     <input
                       type="number"
                       autoFocus
                       placeholder="0,00"
-                      className="text-5xl font-bold bg-transparent border-none focus:ring-0 outline-none w-full text-center placeholder-gray-300 text-lucrai-700"
+                      className="tx-tracking tabular-nums text-5xl font-bold bg-transparent border-none focus:ring-0 outline-none w-full text-center placeholder-gray-300 text-lucrai-700"
                       value={amount}
                       onChange={e => setAmount(e.target.value)}
                     />
@@ -970,7 +1300,7 @@ const Transactions: React.FC = () => {
                   <button onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-gray-500 hover:bg-gray-100 rounded-xl text-sm font-medium transition-colors">Cancelar</button>
                   <button 
                     onClick={handleSave}
-                    disabled={!amount || !desc || !costCenterId || (status === TransactionStatus.PAID && (!datePayment || !bankAccountId))}
+                    disabled={!amount || !desc || !costCenterId || (status === TransactionStatus.PAID && !bankAccountId)}
                     className="px-8 py-2.5 text-white rounded-xl text-sm font-bold shadow-lg shadow-lucrai-200 transform active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-lucrai-500 hover:bg-lucrai-600"
                   >
                     <Save size={18} />

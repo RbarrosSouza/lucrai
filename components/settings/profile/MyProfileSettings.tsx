@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ImageUp, Loader2, Plus, Save, Smartphone, Trash2 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { formatSupabaseError } from '../../../services/formatSupabaseError';
@@ -18,8 +18,8 @@ function extFromMime(mime: string) {
 export function MyProfileSettings() {
   const { status, orgId, org, logoSignedUrl, displayLabel, refresh, error } = useOrgProfile();
 
-  const [displayName, setDisplayName] = useState(org?.display_name ?? '');
-  const [fantasyName, setFantasyName] = useState(org?.fantasy_name ?? '');
+  const [displayName, setDisplayName] = useState('');
+  const [fantasyName, setFantasyName] = useState('');
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [waPhone, setWaPhone] = useState('');
@@ -28,6 +28,16 @@ export function MyProfileSettings() {
   const [waExpiresAt, setWaExpiresAt] = useState<string | null>(null);
   const [waStatus, setWaStatus] = useState<string | null>(null);
   const [isWaLoading, setIsWaLoading] = useState(false);
+
+  // Flag para sincronizar campos apenas na carga inicial (evita sobrescrever edições do usuário)
+  const didSyncRef = useRef(false);
+  useEffect(() => {
+    if (didSyncRef.current) return;
+    if (status !== 'ready' || !org) return;
+    setDisplayName(org.display_name ?? '');
+    setFantasyName(org.fantasy_name ?? '');
+    didSyncRef.current = true;
+  }, [status, org]);
 
   const previewUrl = useMemo(() => {
     if (!logoFile) return null;
@@ -149,6 +159,7 @@ export function MyProfileSettings() {
       setWaCode(row?.code ?? null);
       setWaExpiresAt(row?.expires_at ?? null);
       setWaStatus('pending');
+      setWaPhone('');
       alert('Código gerado. Envie pelo WhatsApp para conectar.');
       await loadWhatsAppStatus();
     } catch (e: any) {
@@ -193,22 +204,16 @@ export function MyProfileSettings() {
                 placeholder="Ex.: Pamela"
                 className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-lucrai-200"
               />
-              <p className="text-xs text-gray-500 mt-2">
-                Sugestão: use para um nome curto. No Dashboard, usamos <b>Nome Fantasia</b> como prioridade.
-              </p>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-2">Nome Fantasia (prioritário no Dashboard)</label>
+              <label className="block text-xs font-bold text-gray-500 mb-2">Nome da Empresa</label>
               <input
                 value={fantasyName}
                 onChange={(e) => setFantasyName(e.target.value)}
                 placeholder="Ex.: Lucraí Pet"
                 className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-sm font-semibold text-gray-800 focus:outline-none focus:ring-2 focus:ring-lucrai-200"
               />
-              <p className="text-xs text-gray-500 mt-2">
-                Preview atual: <b>{displayLabel}</b>
-              </p>
             </div>
           </div>
 
