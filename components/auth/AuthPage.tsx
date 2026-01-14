@@ -63,23 +63,28 @@ export default function AuthPage({ mode }: { mode: Mode }) {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-white to-lucrai-50/40 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-lucrai-600 via-lucrai-500 to-lucrai-700 flex items-center justify-center p-4">
       <div className="w-full max-w-md relative">
-        <div className="bg-white/90 backdrop-blur border border-gray-200 shadow-sm rounded-3xl p-6">
-          <div className="flex items-start justify-between gap-4 mb-6">
-            <div className="min-w-0">
-              <h1 className="text-2xl font-extrabold text-gray-900 leading-tight">
-                {isSignup ? 'Criar conta' : 'Entrar'}
+        {/* Logo centralizada no topo - sem moldura, tamanho grande */}
+        <div className="flex justify-center mb-6">
+          <img 
+            src="/brand/logo_transparente.png" 
+            alt="Lucraí" 
+            className="h-24 w-auto object-contain drop-shadow-lg"
+          />
+        </div>
+
+        {/* Card de login */}
+        <div className="bg-white/95 backdrop-blur-xl border border-white/20 shadow-2xl rounded-3xl p-6">
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-extrabold text-gray-900 leading-tight">
+              {isSignup ? 'Criar conta' : 'Bem-vindo de volta!'}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
                 {isSignup
                   ? 'Crie sua empresa e comece a organizar seus lançamentos.'
-                  : 'Acesse sua conta para ver seus dados com segurança (RLS).'}
+                : 'Entre para acessar seu copiloto financeiro.'}
               </p>
-            </div>
-            <div className="h-11 w-11 rounded-2xl bg-lucrai-50 border border-lucrai-100 flex items-center justify-center shrink-0">
-              <img src="/brand/app_logo.png" alt="Lucraí" className="h-7 w-7 object-contain" />
-            </div>
           </div>
 
           {error && (
@@ -102,15 +107,15 @@ export default function AuthPage({ mode }: { mode: Mode }) {
               <label className="block text-xs font-bold text-gray-500 mb-1">Email</label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="email"
+              <input
+                type="email"
                   inputMode="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="voce@empresa.com"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="voce@empresa.com"
                   className="w-full rounded-2xl border border-gray-200 bg-gray-50 pl-10 pr-3 py-3 text-sm focus:bg-white focus:border-lucrai-500 focus:ring-lucrai-200"
-                />
+              />
               </div>
             </div>
 
@@ -118,14 +123,14 @@ export default function AuthPage({ mode }: { mode: Mode }) {
               <label className="block text-xs font-bold text-gray-500 mb-1">Senha</label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
+              <input
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete={isSignup ? 'new-password' : 'current-password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                autoComplete={isSignup ? 'new-password' : 'current-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
                   className="w-full rounded-2xl border border-gray-200 bg-gray-50 pl-10 pr-11 py-3 text-sm focus:bg-white focus:border-lucrai-500 focus:ring-lucrai-200"
-                />
+              />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
@@ -151,7 +156,7 @@ export default function AuthPage({ mode }: { mode: Mode }) {
                 (isSignup && password.length < MIN_PASSWORD_LEN) ||
                 false
               }
-              className="w-full rounded-2xl bg-lucrai-500 hover:bg-lucrai-600 text-white py-3 text-sm font-extrabold shadow-sm disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              className="w-full rounded-2xl bg-lucrai-500 hover:bg-lucrai-600 text-white py-3.5 text-sm font-extrabold shadow-lg shadow-lucrai-500/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:-translate-y-0.5"
             >
               {isLoading ? (
                 <span className="inline-flex items-center justify-center gap-2">
@@ -164,7 +169,7 @@ export default function AuthPage({ mode }: { mode: Mode }) {
             </button>
           </form>
 
-          <div className="mt-5 text-sm text-gray-600">
+          <div className="mt-5 text-sm text-gray-600 text-center">
             {isSignup ? (
               <span>
                 Já tem conta?{' '}
@@ -183,8 +188,8 @@ export default function AuthPage({ mode }: { mode: Mode }) {
           </div>
         </div>
 
-        <p className="text-xs text-gray-400 mt-4 text-center">
-          Dica: se você ativou confirmação por email no Supabase, finalize a confirmação antes de entrar.
+        <p className="text-xs text-white/70 mt-4 text-center">
+          Seu copiloto financeiro • Acesso seguro (RLS)
         </p>
       </div>
 
@@ -203,6 +208,3 @@ export default function AuthPage({ mode }: { mode: Mode }) {
     </div>
   );
 }
-
-
-

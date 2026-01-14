@@ -125,14 +125,14 @@ function AppLayoutBody() {
                 className="h-16 md:h-18 w-auto object-contain drop-shadow-sm mx-auto"
               />
             </Link>
-            {logoSignedUrl ? (
-              <img
-                src={logoSignedUrl}
-                alt="Logo da empresa"
+              {logoSignedUrl ? (
+                <img
+                  src={logoSignedUrl}
+                  alt="Logo da empresa"
                 className="h-10 w-10 rounded-2xl object-cover border border-white/15 bg-white/5"
-              />
-            ) : null}
-          </div>
+                />
+              ) : null}
+            </div>
         </div>
 
         <nav className="p-4 space-y-1">
@@ -240,13 +240,13 @@ function AppLayoutBody() {
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-white font-bold shrink-0">
-                {initials}
-              </div>
-              <div className="min-w-0">
+              {initials}
+            </div>
+            <div className="min-w-0">
                 <p className="text-sm font-medium text-white truncate whitespace-nowrap">{user?.email || 'Usuário'}</p>
                 <p className="text-xs text-white/70 truncate whitespace-nowrap">Acesso seguro (RLS)</p>
-              </div>
             </div>
+          </div>
 
             <button
               onClick={async () => {
