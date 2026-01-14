@@ -52,18 +52,20 @@ export default function DashboardHub() {
   };
 
   return (
-    <div className="space-y-5">
-      {/* Header compacto */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/60 shadow-premium px-5 py-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Dashboard Analítico</div>
-            <h1 className="text-lg md:text-xl font-bold text-slate-800 truncate">
-              Olá, {displayLabel} — <span className="font-normal text-slate-500 capitalize">{periodLabel}</span>
+    <div className="space-y-3 md:space-y-5">
+      {/* Header compacto mobile */}
+      <div className="bg-white/80 backdrop-blur rounded-2xl border border-white/60 shadow-premium px-3 py-3 md:px-5 md:py-4">
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Dashboard</div>
+            <h1 className="text-base md:text-xl font-bold text-slate-800 truncate">
+              {displayLabel}
             </h1>
+            <span className="text-[11px] md:text-sm text-slate-500 capitalize">{periodLabel}</span>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Toggles - compactos em mobile */}
+          <div className="hidden md:flex items-center gap-3">
             <DashboardHeaderControlsCompact
               basis={basis}
               setBasis={setBasis}
@@ -79,20 +81,41 @@ export default function DashboardHub() {
               className="flex items-center justify-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-float transition-all hover:-translate-y-0.5"
             >
               <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-              <span className="hidden sm:inline">{isRefreshing ? 'Atualizando…' : 'Atualizar'}</span>
+              <span>{isRefreshing ? 'Atualizando…' : 'Atualizar'}</span>
+            </button>
+          </div>
+
+          {/* Mobile: toggles simplificados + ícone refresh */}
+          <div className="flex md:hidden items-center gap-2">
+            <DashboardHeaderControlsCompact
+              basis={basis}
+              setBasis={setBasis}
+              periodMode={periodMode}
+              setPeriodMode={setPeriodMode}
+              selectedMonth={selectedMonth}
+              setSelectedMonth={setSelectedMonth}
+              selectedYear={selectedYear}
+              setSelectedYear={setSelectedYear}
+            />
+            <button
+              onClick={handleRefresh}
+              className="p-2 rounded-xl bg-lucrai-500 text-white shadow-sm"
+              aria-label="Atualizar"
+            >
+              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
             </button>
           </div>
         </div>
 
         {data.error ? (
-          <div className="mt-3 inline-flex items-center px-3 py-2 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
+          <div className="mt-2 inline-flex items-center px-2 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-semibold">
             {data.error}
           </div>
         ) : null}
       </div>
 
-      {/* Grid de Gráficos (2x3) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      {/* Grid de Gráficos - 1 col mobile, 2 cols desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-5">
         {/* 1. Receita vs Despesa + Saldo */}
         <RevenueExpenseChart trendSeries={data.trendSeries} basis={basis} />
 

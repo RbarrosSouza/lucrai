@@ -71,14 +71,14 @@ export function MarginEvolutionChart({ categories, trendSeries, seriesTxs, basis
   }, [categories, trendSeries, seriesTxs, basis]);
 
   return (
-    <div className="bg-white/80 backdrop-blur p-5 rounded-2xl border border-white/60 shadow-premium hover:shadow-float transition-all">
-      <div className="mb-4">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Margem</div>
-        <h3 className="text-base font-bold text-slate-800">Custo Fixo vs Variável</h3>
-        <p className="text-[11px] text-slate-500">Evolução da margem líquida • {basis === 'ACCRUAL' ? 'Competência' : 'Caixa'}</p>
+    <div className="bg-white/80 backdrop-blur p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/60 shadow-premium hover:shadow-float transition-all">
+      <div className="mb-3 md:mb-4">
+        <div className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Margem</div>
+        <h3 className="text-sm md:text-base font-bold text-slate-800">Custo Fixo vs Variável</h3>
+        <p className="text-[10px] md:text-[11px] text-slate-500">{basis === 'ACCRUAL' ? 'Competência' : 'Caixa'}</p>
       </div>
 
-      <div className="h-56 w-full">
+      <div className="h-40 md:h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data}>
             <defs>

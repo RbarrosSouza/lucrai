@@ -1,60 +1,76 @@
-<!-- 09deb236-148c-432d-a299-9de1c7b5a925 578d6997-7d1a-4b11-b14b-d0c3a9d6b99d -->
-# Dashboard de Gráficos Analíticos
+<!-- 09deb236-148c-432d-a299-9de1c7b5a925 be395cd8-fb0b-4fda-b470-e09cf9d6854c -->
+# Refinamento Completo do Design Mobile
 
-## Objetivo
+## Problemas Identificados
 
-Transformar `/dashboard` em um painel com **gráficos comparativos reais**, sem tabs que repetem menus.
+1. **Visão Geral:** Botão "Sincronizar" ocupa espaço desnecessário
+2. **Cards/Quadrantes:** Tamanhos grandes demais para mobile
+3. **Dashboard:** Não aparece na navegação mobile
+4. **TabBar:** Falta "Dashboard" nas opções
+5. **Insight Banner:** Muito grande para mobile
+6. **Espaçamentos:** Paddings excessivos em mobile
 
-## Mudanças Principais
+## Mudanças Planejadas
 
-### 1. Remover elementos desnecessários
+### 1. Header Mobile (Visão Geral / Dashboard)
 
-- Remover `DashboardTabs` (Visão Geral/Caixa/Orçamento/etc.)
-- Remover `InsightBanner`
-- Manter apenas header com toggles (Competência⇄Caixa / Mês⇄Ano) refinados
-
-### 2. Criar gráficos analíticos (grid 2x2 ou 2x3)
-
-| Gráfico | Descrição |
-|---------|-----------|
-| **Receita vs Despesa** | AreaChart mensal/anual com evolução do saldo (linha) |
-| **Top 5 Categorias (Pareto)** | BarChart horizontal das maiores despesas |
-| **Orçado vs Realizado** | BarChart agrupado por centro de custo |
-| **Margem Líquida** | LineChart com Custo Fixo vs Variável ao longo do tempo |
-| **Comparativo MoM** | BarChart lado a lado (mês atual vs anterior) |
-
-### 3. Refinar design dos toggles
-
+- Remover botão "Sincronizar" em mobile (manter só desktop)
+- Pull-to-refresh como alternativa mobile
 - Compactar header (menos padding)
-- Toggles em pill/segmented control elegante
-- Seletor de período mais discreto
 
-## Arquivos a modificar
+### 2. MobileTabBar
 
-1. `components/DashboardHub.tsx` — remover tabs/banner, montar grid de gráficos
-2. `components/dashboard/charts/` — criar componentes de gráfico reutilizáveis:
+- Adicionar "Dashboard" como tab (ícone de gráfico)
+- Reorganizar: Início | Extrato | + | Dashboard | Menu
+- Ajustar ícones e labels
 
-- `RevenueExpenseChart.tsx`
-- `TopCategoriesChart.tsx`
-- `BudgetVsActualChart.tsx`
-- `MarginEvolutionChart.tsx`
-- `MoMComparisonChart.tsx`
+### 3. Cards KPI (Visão Geral)
 
-3. `components/dashboard/useDashboardData.ts` — adicionar métricas de custo fixo/variável e margem
-4. `components/dashboard/DashboardHeaderControls.tsx` — refinar design (compactar, pill buttons)
+- Reduzir padding (`p-4` em vez de `p-6`)
+- Fontes menores para valores (`text-2xl` em vez de `text-4xl`)
+- Grid 1 coluna em mobile
 
-## Dados necessários
+### 4. Insight Banner
 
-- Custo fixo vs variável: filtrar categorias DRE por grupo ("Custos Fixos" / "Custos Variáveis")
-- Margem líquida: `(Receita - Custos Variáveis - Custos Fixos) / Receita`
+- Compactar para mobile (menos padding, fonte menor)
+- Ou ocultar em telas muito pequenas
+
+### 5. Dashboard Hub (Gráficos)
+
+- Grid 1 coluna em mobile
+- Altura de gráficos reduzida (`h-40` em vez de `h-56`)
+- Header compacto
+
+### 6. Lançamentos/Extrato
+
+- Cards de resumo mais compactos
+- Filtros em drawer/modal
+- Tabela com scroll horizontal ou card view
+
+### 7. Menu Mobile
+
+- Adicionar link para Dashboard
+- Manter organização atual
+
+## Arquivos a Modificar
+
+1. `components/Dashboard.tsx` — header responsivo, sem botão Sincronizar em mobile
+2. `components/DashboardHub.tsx` — gráficos responsivos
+3. `components/mobile/MobileTabBar.tsx` — adicionar Dashboard
+4. `components/mobile/MenuPage.tsx` — adicionar link Dashboard
+5. `components/dashboard/InsightBanner.tsx` — compactar mobile
+6. `components/dashboard/sections/OverviewTab.tsx` — cards menores
+7. `components/dashboard/charts/*.tsx` — altura responsiva
+8. `components/Transactions.tsx` — cards compactos
 
 ### To-dos
 
 - [ ] Aplicar backfill em `auth.users`: setar `email_change` para '' onde estiver NULL.
 - [ ] Criar função trigger em `public` e trigger `BEFORE INSERT OR UPDATE` em `auth.users` garantindo `email_change` não-NULL.
 - [ ] Validar `email_change IS NULL` zerado e revisar logs do serviço Auth após uma tentativa de login.
-- [ ] Remover DashboardTabs e InsightBanner do DashboardHub.tsx
-- [ ] Refinar design dos toggles (pill buttons, compactar header)
-- [ ] Criar componentes de gráfico em components/dashboard/charts/
-- [ ] Adicionar métricas de custo fixo/variável e margem no hook
-- [ ] Montar grid de gráficos no DashboardHub com dados reais
+- [ ] Remover botão Sincronizar em mobile e compactar headers
+- [ ] Adicionar Dashboard à MobileTabBar e MenuPage
+- [ ] Reduzir tamanho dos cards KPI em mobile
+- [ ] Compactar InsightBanner para mobile
+- [ ] Ajustar altura dos gráficos e grid para mobile
+- [ ] Compactar cards de resumo em Lançamentos

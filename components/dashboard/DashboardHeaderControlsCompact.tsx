@@ -36,14 +36,14 @@ export function DashboardHeaderControlsCompact(props: Props) {
     return [y - 2, y - 1, y, y + 1];
   }, []);
 
-  const pillBase = 'px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors';
+  const pillBase = 'px-2 md:px-2.5 py-0.5 md:py-1 rounded-md md:rounded-lg text-[10px] md:text-[11px] font-bold transition-colors';
   const pillActive = 'bg-lucrai-500 text-white shadow-sm';
   const pillInactive = 'text-slate-500 hover:bg-slate-100';
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
       {/* Período (Mês / Ano) */}
-      <div className="inline-flex rounded-lg bg-slate-100 p-0.5">
+      <div className="inline-flex rounded-md md:rounded-lg bg-slate-100 p-0.5">
         <button
           type="button"
           onClick={() => setPeriodMode('MONTH')}
@@ -60,8 +60,8 @@ export function DashboardHeaderControlsCompact(props: Props) {
         </button>
       </div>
 
-      {/* Base (Competência / Caixa) */}
-      <div className="inline-flex rounded-lg bg-slate-100 p-0.5">
+      {/* Base (Competência / Caixa) - oculto em mobile muito pequeno */}
+      <div className="hidden sm:inline-flex rounded-md md:rounded-lg bg-slate-100 p-0.5">
         <button
           type="button"
           onClick={() => setBasis('ACCRUAL')}
@@ -82,8 +82,8 @@ export function DashboardHeaderControlsCompact(props: Props) {
 
       {/* Seletor de período */}
       {periodMode === 'MONTH' ? (
-        <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
-          <Calendar size={12} className="text-slate-400" />
+        <label className="inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-2.5 py-0.5 md:py-1 rounded-md md:rounded-lg bg-slate-100 text-slate-700 text-[10px] md:text-[11px] font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
+          <Calendar size={10} className="md:w-3 md:h-3 text-slate-400" />
           <span className="capitalize">{monthLabelPtBr(selectedMonth)}</span>
           <input
             type="month"
@@ -93,10 +93,10 @@ export function DashboardHeaderControlsCompact(props: Props) {
           />
         </label>
       ) : (
-        <label className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 text-[11px] font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
-          <Calendar size={12} className="text-slate-400" />
+        <label className="inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-2.5 py-0.5 md:py-1 rounded-md md:rounded-lg bg-slate-100 text-slate-700 text-[10px] md:text-[11px] font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
+          <Calendar size={10} className="md:w-3 md:h-3 text-slate-400" />
           <select
-            className="bg-transparent outline-none text-slate-700 font-semibold text-[11px]"
+            className="bg-transparent outline-none text-slate-700 font-semibold text-[10px] md:text-[11px]"
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
           >
@@ -111,4 +111,3 @@ export function DashboardHeaderControlsCompact(props: Props) {
     </div>
   );
 }
-

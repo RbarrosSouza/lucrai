@@ -662,11 +662,42 @@ const Transactions: React.FC = () => {
   };
 
   return (
-    <div className="transactions-page space-y-6 h-full flex flex-col">
+    <div className="transactions-page space-y-3 md:space-y-6 h-full flex flex-col">
       
-      {/* 1. SUMMARY CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: Pago no Mês */}
+      {/* 1. SUMMARY CARDS - ultra compactos em mobile (horizontal scroll) */}
+      {/* Mobile: cards em linha horizontal com scroll */}
+      <div className="md:hidden flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide">
+        <div className="flex-shrink-0 bg-white/80 backdrop-blur px-3 py-2 rounded-xl border border-white/60 shadow-sm flex items-center gap-2 min-w-[140px]">
+          <CheckCircle size={16} className="text-emerald-500 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[8px] uppercase tracking-wide font-bold text-slate-400 truncate">Realizado</p>
+            <p className="text-sm font-semibold text-slate-800 tabular-nums truncate">
+              R$ {summary.paidNet.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+        <div className="flex-shrink-0 bg-white/80 backdrop-blur px-3 py-2 rounded-xl border border-white/60 shadow-sm flex items-center gap-2 min-w-[140px]">
+          <Clock size={16} className="text-amber-500 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[8px] uppercase tracking-wide font-bold text-slate-400 truncate">Em Aberto</p>
+            <p className="text-sm font-semibold text-slate-800 tabular-nums truncate">
+              R$ {summary.openNet.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+        <div className="flex-shrink-0 bg-white/80 backdrop-blur px-3 py-2 rounded-xl border border-white/60 shadow-sm flex items-center gap-2 min-w-[140px]">
+          <AlertTriangle size={16} className="text-rose-500 flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-[8px] uppercase tracking-wide font-bold text-slate-400 truncate">Atrasado</p>
+            <p className="text-sm font-semibold text-slate-800 tabular-nums truncate">
+              R$ {summary.overdueValue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop: cards em grid normal */}
+      <div className="hidden md:grid grid-cols-3 gap-4">
         <div className="bg-white/80 backdrop-blur p-6 rounded-3xl border border-white/60 shadow-premium flex items-center justify-between hover:-translate-y-1 hover:shadow-float transition-all">
            <div>
              <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Realizado (Pago)</p>
@@ -678,8 +709,6 @@ const Transactions: React.FC = () => {
              <CheckCircle size={20} />
            </div>
         </div>
-
-        {/* Card 2: Em Aberto */}
         <div className="bg-white/80 backdrop-blur p-6 rounded-3xl border border-white/60 shadow-premium flex items-center justify-between hover:-translate-y-1 hover:shadow-float transition-all">
            <div>
              <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Em Aberto (Previsto)</p>
@@ -691,15 +720,13 @@ const Transactions: React.FC = () => {
              <Clock size={20} />
            </div>
         </div>
-
-        {/* Card 3: Atrasado */}
         <div className="bg-white/80 backdrop-blur p-6 rounded-3xl border border-white/60 shadow-premium flex items-center justify-between hover:-translate-y-1 hover:shadow-float transition-all">
            <div>
              <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Atrasado / Vencido</p>
              <h3 className="tx-tracking text-2xl font-light mt-2 text-slate-800 tabular-nums">
                R$ {summary.overdueValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
              </h3>
-             <p className="text-[10px] text-slate-500 mt-1">{summary.overdueCount} lançamentos</p>
+             <p className="text-[10px] text-slate-500 mt-0.5">{summary.overdueCount} lançamentos</p>
            </div>
            <div className="p-3 rounded-3xl bg-slate-50 text-slate-400 border border-white/60">
              <AlertTriangle size={20} />
@@ -707,13 +734,67 @@ const Transactions: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. ACTIONS & FILTERS BAR */}
-      <div className="bg-white/80 backdrop-blur p-5 rounded-3xl shadow-premium border border-white/60">
-         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            {/* Quick Type Filter & Search */}
-            <div className="flex flex-col sm:flex-row gap-4 flex-1">
+      {/* 2. ACTIONS & FILTERS BAR - compacto mobile */}
+      <div className="bg-white/80 backdrop-blur p-2.5 md:p-5 rounded-xl md:rounded-3xl shadow-premium border border-white/60">
+         <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-stretch md:items-center justify-between">
+            {/* Mobile: Filtro de tipo + ícones na mesma linha */}
+            <div className="md:hidden flex items-center justify-between gap-2">
                {/* QUICK TYPE FILTER */}
-               <div className="flex bg-gray-100 p-1 rounded-lg self-start sm:self-center">
+               <div className="flex bg-gray-100 p-0.5 rounded-lg">
+                  <button 
+                    onClick={() => setFilters({...filters, type: 'ALL'})} 
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${filters.type === 'ALL' ? 'bg-white shadow text-gray-900' : 'text-gray-500'}`}
+                  >
+                    Tudo
+                  </button>
+                  <button 
+                    onClick={() => setFilters({...filters, type: 'INCOME'})} 
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${filters.type === 'INCOME' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500'}`}
+                  >
+                    Receitas
+                  </button>
+                  <button 
+                    onClick={() => setFilters({...filters, type: 'EXPENSE'})} 
+                    className={`px-3 py-1.5 text-[10px] font-bold rounded-lg transition-all ${filters.type === 'EXPENSE' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500'}`}
+                  >
+                    Despesas
+                  </button>
+               </div>
+               {/* Ícones de ação */}
+               <div className="flex gap-1.5">
+                  <button 
+                    onClick={fetchInitialData}
+                    className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
+                    title="Atualizar"
+                  >
+                    <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+                  </button>
+                  <button 
+                    onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
+                    className={`p-2 rounded-lg border transition-colors ${isFilterPanelOpen ? 'bg-lucrai-50 border-lucrai-200 text-lucrai-700' : 'border-gray-200 text-gray-500 hover:bg-gray-50'}`}
+                    title="Filtros"
+                  >
+                    <Filter size={14} />
+                  </button>
+               </div>
+            </div>
+
+            {/* Mobile: Campo de busca */}
+            <div className="md:hidden relative">
+               <Search size={14} className="absolute left-2.5 top-2.5 text-gray-400" />
+               <input
+                 type="text"
+                 placeholder="Buscar por descrição, fornecedor..."
+                 value={searchTerm}
+                 onChange={(e) => setSearchTerm(e.target.value)}
+                 className="pl-8 block w-full rounded-lg border-gray-200 border bg-gray-50 text-[11px] focus:border-lucrai-500 focus:ring-lucrai-200 p-2"
+               />
+            </div>
+
+            {/* Desktop: Layout original */}
+            <div className="hidden md:flex flex-row gap-4 flex-1">
+               {/* QUICK TYPE FILTER */}
+               <div className="flex bg-gray-100 p-1 rounded-lg self-center">
                   <button 
                     onClick={() => setFilters({...filters, type: 'ALL'})} 
                     className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${filters.type === 'ALL' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
@@ -746,8 +827,8 @@ const Transactions: React.FC = () => {
                </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex gap-2 w-full md:w-auto justify-end">
+            {/* Desktop: Actions */}
+            <div className="hidden md:flex gap-2 justify-end">
                <button 
                  onClick={fetchInitialData}
                  className="p-2.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50"
@@ -760,15 +841,14 @@ const Transactions: React.FC = () => {
                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${isFilterPanelOpen ? 'bg-lucrai-50 border-lucrai-200 text-lucrai-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                >
                  <Filter size={16} />
-                 <span className="hidden sm:inline">Filtros Avançados</span>
+                 <span>Filtros Avançados</span>
                </button>
                <button 
                  onClick={handleResetForm}
                  className="flex items-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-4 py-2.5 rounded-2xl text-sm font-bold shadow-float transition-all hover:-translate-y-0.5"
                >
                  <Plus size={16} />
-                 <span className="hidden sm:inline">Novo Lançamento</span>
-                 <span className="sm:hidden">Novo</span>
+                 <span>Novo Lançamento</span>
                </button>
             </div>
          </div>
@@ -840,12 +920,64 @@ const Transactions: React.FC = () => {
       </div>
 
       {/* 3. TABLE */}
-      <div className="flex-1 bg-white/80 backdrop-blur rounded-3xl shadow-premium border border-white/60 flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white/80 backdrop-blur rounded-xl md:rounded-3xl shadow-premium border border-white/60 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto">
           {isLoading && transactions.length === 0 ? (
             <div className="p-8 text-center text-gray-500">Carregando lançamentos...</div>
           ) : (
-          <table className="min-w-full divide-y divide-gray-200">
+          <>
+          {/* MOBILE: Cards View */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {filteredTransactions.map((t) => {
+              const cc = costCenters.find(c => c.id === t.costCenterId);
+              const supplierLabel = getSupplierDisplayName(t);
+              const isExpense = t.type === TransactionType.EXPENSE;
+              return (
+                <div 
+                  key={t.id} 
+                  className="p-3 hover:bg-slate-50 transition-colors active:bg-slate-100"
+                  onClick={() => handleEdit(t)}
+                >
+                  {/* Row 1: Descrição + Valor */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{t.description}</p>
+                      <p className="text-[11px] text-gray-500 truncate flex items-center gap-1 mt-0.5">
+                        <Building size={10} className="shrink-0" />
+                        {supplierLabel}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={`text-sm font-bold tabular-nums ${isExpense ? 'text-rose-600' : 'text-emerald-600'}`}>
+                        {isExpense ? '-' : '+'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Row 2: Data + Status + CC */}
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                      {formatDateBR(t.date)}
+                    </span>
+                    {renderStatusBadge(t.status, t.type)}
+                    {cc && (
+                      <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-[100px]">
+                        {cc.name}
+                      </span>
+                    )}
+                    {t.installments && (
+                      <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                        {t.installments.current}/{t.installments.total}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* DESKTOP: Table View */}
+          <table className="hidden md:table min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
               <tr>
                 <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Vencimento</th>
@@ -953,6 +1085,7 @@ const Transactions: React.FC = () => {
                 })}
             </tbody>
           </table>
+          </>
           )}
           
           {filteredTransactions.length === 0 && !isLoading && (

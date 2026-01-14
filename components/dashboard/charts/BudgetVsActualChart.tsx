@@ -56,23 +56,23 @@ export function BudgetVsActualChart({ budgets, costCenters, periodTxs, periodMod
 
   if (!data.length) {
     return (
-      <div className="bg-white/80 backdrop-blur p-5 rounded-2xl border border-white/60 shadow-premium">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Orçamento</div>
-        <h3 className="text-base font-bold text-slate-800">Orçado vs Realizado</h3>
-        <p className="text-sm text-slate-500 mt-4">Sem dados de orçamento no período.</p>
+      <div className="bg-white/80 backdrop-blur p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/60 shadow-premium">
+        <div className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Orçamento</div>
+        <h3 className="text-sm md:text-base font-bold text-slate-800">Orçado vs Realizado</h3>
+        <p className="text-[11px] md:text-sm text-slate-500 mt-3">Sem dados no período.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur p-5 rounded-2xl border border-white/60 shadow-premium hover:shadow-float transition-all">
-      <div className="mb-4">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Orçamento</div>
-        <h3 className="text-base font-bold text-slate-800">Orçado vs Realizado</h3>
-        <p className="text-[11px] text-slate-500">Por centro de custo • {periodMode === 'MONTH' ? 'Mês' : 'Ano'}</p>
+    <div className="bg-white/80 backdrop-blur p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/60 shadow-premium hover:shadow-float transition-all">
+      <div className="mb-3 md:mb-4">
+        <div className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Orçamento</div>
+        <h3 className="text-sm md:text-base font-bold text-slate-800">Orçado vs Realizado</h3>
+        <p className="text-[10px] md:text-[11px] text-slate-500">{periodMode === 'MONTH' ? 'Mês' : 'Ano'}</p>
       </div>
 
-      <div className="h-56 w-full">
+      <div className="h-40 md:h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 10, right: 10 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />

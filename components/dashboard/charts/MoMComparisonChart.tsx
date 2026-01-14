@@ -60,15 +60,15 @@ export function MoMComparisonChart({ periodTxs, prevPeriodTxs, periodMode, selec
   }, [data]);
 
   return (
-    <div className="bg-white/80 backdrop-blur p-5 rounded-2xl border border-white/60 shadow-premium hover:shadow-float transition-all lg:col-span-2">
-      <div className="mb-4">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Comparativo</div>
-        <h3 className="text-base font-bold text-slate-800">
-          {periodMode === 'MONTH' ? 'Mês Atual vs Anterior' : 'Ano Atual vs Anterior'}
+    <div className="bg-white/80 backdrop-blur p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/60 shadow-premium hover:shadow-float transition-all lg:col-span-2">
+      <div className="mb-3 md:mb-4">
+        <div className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Comparativo</div>
+        <h3 className="text-sm md:text-base font-bold text-slate-800">
+          {periodMode === 'MONTH' ? 'Mês vs Anterior' : 'Ano vs Anterior'}
         </h3>
       </div>
 
-      <div className="h-56 w-full">
+      <div className="h-40 md:h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ left: 0, right: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />

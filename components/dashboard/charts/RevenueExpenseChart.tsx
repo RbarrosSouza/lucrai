@@ -34,26 +34,26 @@ export function RevenueExpenseChart({ trendSeries, basis }: Props) {
   }));
 
   return (
-    <div className="bg-white/80 backdrop-blur p-5 rounded-2xl border border-white/60 shadow-premium hover:shadow-float transition-all">
-      <div className="mb-4">
-        <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Evolução</div>
-        <h3 className="text-base font-bold text-slate-800">Receita vs Despesa</h3>
-        <p className="text-[11px] text-slate-500">{basis === 'ACCRUAL' ? 'Competência' : 'Caixa'} • Série do período</p>
+    <div className="bg-white/80 backdrop-blur p-4 md:p-5 rounded-xl md:rounded-2xl border border-white/60 shadow-premium hover:shadow-float transition-all">
+      <div className="mb-3 md:mb-4">
+        <div className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Evolução</div>
+        <h3 className="text-sm md:text-base font-bold text-slate-800">Receita vs Despesa</h3>
+        <p className="text-[10px] md:text-[11px] text-slate-500">{basis === 'ACCRUAL' ? 'Competência' : 'Caixa'}</p>
       </div>
 
-      <div className="flex items-center gap-4 mb-3 text-[10px] font-bold text-slate-500">
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-lucrai-500" /> Receita
+      <div className="flex items-center gap-3 md:gap-4 mb-2 md:mb-3 text-[9px] md:text-[10px] font-bold text-slate-500">
+        <span className="flex items-center gap-1">
+          <span className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-lucrai-500" /> Receita
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-slate-400" /> Despesa
+        <span className="flex items-center gap-1">
+          <span className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-slate-400" /> Despesa
         </span>
-        <span className="flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" /> Saldo
+        <span className="flex items-center gap-1">
+          <span className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-emerald-500" /> Saldo
         </span>
       </div>
 
-      <div className="h-56 w-full">
+      <div className="h-40 md:h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data}>
             <defs>

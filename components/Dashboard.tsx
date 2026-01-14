@@ -55,39 +55,44 @@ const Dashboard: React.FC = () => {
   });
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <div className="bg-white/80 backdrop-blur rounded-3xl border border-white/60 shadow-premium p-5 md:p-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="min-w-0">
-            <div className="min-w-0">
-              <div className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Visão geral</div>
-              <h1 className="text-xl md:text-2xl font-bold text-slate-800 truncate">
-                Bom dia, {displayLabel}!
-              </h1>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center px-3 py-1.5 rounded-2xl bg-white/70 border border-white/70 text-slate-700 text-xs font-semibold capitalize shadow-premium">
-                {periodLabel}
-              </span>
-            </div>
-
-            {error ? (
-              <div className="mt-3 inline-flex items-center px-3 py-2 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
-                {error}
-              </div>
-            ) : null}
+    <div className="space-y-3 md:space-y-5">
+      {/* Header compacto mobile */}
+      <div className="bg-white/80 backdrop-blur rounded-2xl md:rounded-3xl border border-white/60 shadow-premium p-4 md:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Visão geral</div>
+            <h1 className="text-lg md:text-2xl font-bold text-slate-800 truncate">
+              Bom dia, {displayLabel}!
+            </h1>
+            <span className="inline-block mt-1 px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl bg-white/70 border border-white/70 text-slate-700 text-[11px] md:text-xs font-semibold capitalize shadow-sm">
+              {periodLabel}
+            </span>
           </div>
 
-          <div className="flex gap-2 w-full md:w-auto">
-            <button 
-              onClick={handleRefresh}
-              className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-5 py-3 rounded-2xl text-sm font-bold shadow-float transition-all hover:-translate-y-0.5"
-            >
-              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
-              <span className="whitespace-nowrap">{isRefreshing ? 'Atualizando…' : 'Sincronizar'}</span>
-            </button>
-          </div>
+          {/* Botão Sincronizar - só desktop */}
+          <button 
+            onClick={handleRefresh}
+            className="hidden md:flex items-center justify-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-5 py-3 rounded-2xl text-sm font-bold shadow-float transition-all hover:-translate-y-0.5"
+          >
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+            <span className="whitespace-nowrap">{isRefreshing ? 'Atualizando…' : 'Sincronizar'}</span>
+          </button>
+
+          {/* Ícone de refresh para mobile */}
+          <button 
+            onClick={handleRefresh}
+            className="md:hidden p-2 rounded-xl bg-lucrai-500 text-white shadow-sm"
+            aria-label="Atualizar"
+          >
+            <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
+          </button>
         </div>
+
+        {error ? (
+          <div className="mt-2 inline-flex items-center px-2 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-semibold">
+            {error}
+          </div>
+        ) : null}
       </div>
 
       <InsightBanner insight={insight} loading={insightsLoading} />
