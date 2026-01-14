@@ -42,6 +42,7 @@ declare
   grp_adm_id uuid;
   grp_terceiros_id uuid;
   grp_mkt_id uuid;
+  grp_despesas_operacionais_id uuid;
   grp_receitas_nao_op_id uuid;
   grp_gastos_nao_op_id uuid;
   grp_ir_csll_id uuid;
@@ -191,6 +192,21 @@ begin
     update public.categories
     set type='EXPENSE', is_active=true, include_in_dre=true, is_group=true, parent_id=null, sort_order=90, ext_code=null, sign_factor=-1
     where id = grp_mkt_id;
+  end if;
+
+  -- [Despesas Operacionais]
+  select id into grp_despesas_operacionais_id
+  from public.categories
+  where org_id = _org_id and parent_id is null and name = 'Despesas Operacionais'
+  limit 1;
+  if grp_despesas_operacionais_id is null then
+    insert into public.categories (org_id, name, type, is_active, include_in_dre, is_group, parent_id, sort_order, ext_code, sign_factor)
+    values (_org_id, 'Despesas Operacionais', 'EXPENSE', true, true, true, null, 335, null, -1)
+    returning id into grp_despesas_operacionais_id;
+  else
+    update public.categories
+    set type='EXPENSE', is_active=true, include_in_dre=true, is_group=true, parent_id=null, sort_order=335, ext_code=null, sign_factor=-1
+    where id = grp_despesas_operacionais_id;
   end if;
 
   -- [Receitas não Operacionais]
@@ -766,6 +782,29 @@ begin
   else
     update public.categories
     set name='8.3 — Campanhas de Marketing', type='EXPENSE', is_active=true, include_in_dre=true, is_group=false, parent_id=grp_mkt_id, sort_order=803, sign_factor=-1
+    where id=leaf_id;
+  end if;
+
+  -- [Despesas Operacionais]
+  select id into leaf_id from public.categories where org_id=_org_id and ext_code='16.1' limit 1;
+  if leaf_id is null then
+    insert into public.categories (org_id, name, type, is_active, include_in_dre, is_group, parent_id, sort_order, ext_code, sign_factor)
+    values (_org_id, 'Manutenção de Equipamentos', 'EXPENSE', true, true, false, grp_despesas_operacionais_id, 1601, '16.1', -1)
+    returning id into leaf_id;
+  else
+    update public.categories
+    set name='Manutenção de Equipamentos', type='EXPENSE', is_active=true, include_in_dre=true, is_group=false, parent_id=grp_despesas_operacionais_id, sort_order=1601, sign_factor=-1
+    where id=leaf_id;
+  end if;
+
+  select id into leaf_id from public.categories where org_id=_org_id and ext_code='16.2' limit 1;
+  if leaf_id is null then
+    insert into public.categories (org_id, name, type, is_active, include_in_dre, is_group, parent_id, sort_order, ext_code, sign_factor)
+    values (_org_id, 'Limpeza e Higienização', 'EXPENSE', true, true, false, grp_despesas_operacionais_id, 1602, '16.2', -1)
+    returning id into leaf_id;
+  else
+    update public.categories
+    set name='Limpeza e Higienização', type='EXPENSE', is_active=true, include_in_dre=true, is_group=false, parent_id=grp_despesas_operacionais_id, sort_order=1602, sign_factor=-1
     where id=leaf_id;
   end if;
 
