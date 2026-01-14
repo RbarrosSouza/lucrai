@@ -13,6 +13,8 @@ type Props = {
   signUp: (params: { email: string; password: string; companyName?: string; phoneE164?: string; displayName?: string }) => Promise<any>;
 };
 
+const MIN_PASSWORD_LEN = 6;
+
 export function SignupOnboardingModal({ email, password, isOpen, onClose, onBack, onDone, signUp }: Props) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [companyName, setCompanyName] = useState('');
@@ -33,6 +35,9 @@ export function SignupOnboardingModal({ email, password, isOpen, onClose, onBack
 
   const onFinish = async () => {
     setError(null);
+    if ((password ?? '').length < MIN_PASSWORD_LEN) {
+      return setError(`Senha precisa ter no mínimo ${MIN_PASSWORD_LEN} caracteres.`);
+    }
     const p = brDigitsToE164(phoneDigits);
     const c = brDigitsToE164(phoneDigitsConfirm);
     if (p.ok === false) return setError(p.reason);

@@ -93,7 +93,7 @@ export default function SignupPhonePage() {
               </div>
               <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
             </div>
-            <img src="/brand/logo.png" alt="Lucraí" className="h-10 w-10 object-contain" />
+            <img src="/brand/app_logo.png" alt="Lucraí" className="h-10 w-10 object-contain" />
           </div>
 
           {isLoadingOrg ? (

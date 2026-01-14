@@ -1,6 +1,7 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
+import DashboardHub from './components/DashboardHub';
 import Transactions from './components/Transactions';
 import Reports from './components/Reports';
 import Budget from './components/Budget';
@@ -9,6 +10,7 @@ import BudgetPlanning from './components/budget/BudgetPlanning';
 import Reconciliation from './components/Reconciliation';
 import Settings from './components/Settings';
 import AppLayout from './components/layout/AppLayout';
+import MenuPage from './components/mobile/MenuPage';
 import { AuthProvider } from './components/auth/AuthContext';
 import { RequireAuth } from './components/auth/RequireAuth';
 import AuthPage from './components/auth/AuthPage';
@@ -61,8 +63,10 @@ const App: React.FC = () => {
             }
           >
             <Route index element={<Dashboard />} />
+            <Route path="/dashboard" element={<DashboardHub />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/reports" element={<Reports />} />
+            <Route path="/menu" element={<MenuPage />} />
             <Route path="/budget/*" element={<Budget />}>
               <Route index element={<Navigate to="forecast" replace />} />
               <Route path="forecast" element={<BudgetForecast />} />

@@ -98,10 +98,10 @@ export function OrgProfileProvider({ children }: { children: React.ReactNode }) 
   }, [refresh]);
 
   const displayLabel = useMemo(() => {
-    const fantasy = org?.fantasy_name?.trim();
     const display = org?.display_name?.trim();
+    const fantasy = org?.fantasy_name?.trim();
     const name = org?.name?.trim();
-    return fantasy || display || name || 'Empreendedor';
+    return display || fantasy || name || 'Empreendedor';
   }, [org]);
 
   const value = useMemo<OrgProfileContextValue>(() => {

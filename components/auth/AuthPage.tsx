@@ -1,9 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Loader2, Lock, Mail } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import { SignupOnboardingModal } from './SignupOnboardingModal';
 
 type Mode = 'login' | 'signup';
+const MIN_PASSWORD_LEN = 6;
 
 function getErrorMessage(err: unknown) {
   if (!err) return 'Erro desconhecido.';
@@ -29,6 +31,7 @@ export default function AuthPage({ mode }: { mode: Mode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const isSignup = mode === 'signup';
 
@@ -37,6 +40,10 @@ export default function AuthPage({ mode }: { mode: Mode }) {
     setError(null);
 
     if (!email.trim() || !password) return;
+    if (isSignup && password.length < MIN_PASSWORD_LEN) {
+      setError(`Senha precisa ter no mínimo ${MIN_PASSWORD_LEN} caracteres.`);
+      return;
+    }
 
     try {
       if (isSignup) {
@@ -56,25 +63,27 @@ export default function AuthPage({ mode }: { mode: Mode }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-white via-white to-lucrai-50/40 flex items-center justify-center p-4">
       <div className="w-full max-w-md relative">
-        <div className="bg-white border border-gray-200 shadow-sm rounded-3xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+        <div className="bg-white/90 backdrop-blur border border-gray-200 shadow-sm rounded-3xl p-6">
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <div className="min-w-0">
+              <h1 className="text-2xl font-extrabold text-gray-900 leading-tight">
                 {isSignup ? 'Criar conta' : 'Entrar'}
               </h1>
               <p className="text-sm text-gray-500 mt-1">
                 {isSignup
                   ? 'Crie sua empresa e comece a organizar seus lançamentos.'
-                  : 'Acesse sua conta para ver os dados com segurança (RLS).'}
+                  : 'Acesse sua conta para ver seus dados com segurança (RLS).'}
               </p>
             </div>
-            <img src="/brand/logo.png" alt="Lucraí" className="h-10 w-10 object-contain" />
+            <div className="h-11 w-11 rounded-2xl bg-lucrai-50 border border-lucrai-100 flex items-center justify-center shrink-0">
+              <img src="/brand/app_logo.png" alt="Lucraí" className="h-7 w-7 object-contain" />
+            </div>
           </div>
 
           {error && (
-            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mb-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               {error}
             </div>
           )}
@@ -91,26 +100,46 @@ export default function AuthPage({ mode }: { mode: Mode }) {
           <form onSubmit={onSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">Email</label>
-              <input
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="voce@empresa.com"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:bg-white focus:border-lucrai-500 focus:ring-lucrai-200"
-              />
+              <div className="relative">
+                <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="email"
+                  inputMode="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="voce@empresa.com"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 pl-10 pr-3 py-3 text-sm focus:bg-white focus:border-lucrai-500 focus:ring-lucrai-200"
+                />
+              </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">Senha</label>
-              <input
-                type="password"
-                autoComplete={isSignup ? 'new-password' : 'current-password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm focus:bg-white focus:border-lucrai-500 focus:ring-lucrai-200"
-              />
+              <div className="relative">
+                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete={isSignup ? 'new-password' : 'current-password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full rounded-2xl border border-gray-200 bg-gray-50 pl-10 pr-11 py-3 text-sm focus:bg-white focus:border-lucrai-500 focus:ring-lucrai-200"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-xl hover:bg-gray-100 text-gray-500 flex items-center justify-center"
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {isSignup ? (
+                <div className="mt-2 text-xs text-gray-500">
+                  Mínimo de <b>{MIN_PASSWORD_LEN}</b> caracteres.
+                </div>
+              ) : null}
             </div>
 
             <button
@@ -119,11 +148,19 @@ export default function AuthPage({ mode }: { mode: Mode }) {
                 isLoading ||
                 !email.trim() ||
                 !password ||
+                (isSignup && password.length < MIN_PASSWORD_LEN) ||
                 false
               }
-              className="w-full rounded-xl bg-lucrai-500 hover:bg-lucrai-600 text-white py-2.5 text-sm font-bold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-2xl bg-lucrai-500 hover:bg-lucrai-600 text-white py-3 text-sm font-extrabold shadow-sm disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? 'Aguarde…' : isSignup ? 'Continuar' : 'Entrar'}
+              {isLoading ? (
+                <span className="inline-flex items-center justify-center gap-2">
+                  <Loader2 size={16} className="animate-spin" />
+                  Aguarde…
+                </span>
+              ) : (
+                <span>{isSignup ? 'Continuar' : 'Entrar'}</span>
+              )}
             </button>
           </form>
 
