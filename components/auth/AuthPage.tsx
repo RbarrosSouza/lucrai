@@ -79,12 +79,12 @@ export default function AuthPage({ mode }: { mode: Mode }) {
           <div className="text-center mb-6">
             <h1 className="text-2xl font-extrabold text-gray-900 leading-tight">
               {isSignup ? 'Criar conta' : 'Bem-vindo de volta!'}
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {isSignup
-                ? 'Crie sua empresa e comece a organizar seus lançamentos.'
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                {isSignup
+                  ? 'Crie sua empresa e comece a organizar seus lançamentos.'
                 : 'Entre para acessar seu copiloto financeiro.'}
-            </p>
+              </p>
           </div>
 
           {error && (
@@ -107,15 +107,15 @@ export default function AuthPage({ mode }: { mode: Mode }) {
               <label className="block text-xs font-bold text-gray-500 mb-1">Email</label>
               <div className="relative">
                 <Mail size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="email"
+              <input
+                type="email"
                   inputMode="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="voce@empresa.com"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="voce@empresa.com"
                   className="w-full rounded-2xl border border-gray-200 bg-gray-50 pl-10 pr-3 py-3 text-sm focus:bg-white focus:border-lucrai-500 focus:ring-lucrai-200"
-                />
+              />
               </div>
             </div>
 
@@ -123,14 +123,14 @@ export default function AuthPage({ mode }: { mode: Mode }) {
               <label className="block text-xs font-bold text-gray-500 mb-1">Senha</label>
               <div className="relative">
                 <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
+              <input
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete={isSignup ? 'new-password' : 'current-password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                autoComplete={isSignup ? 'new-password' : 'current-password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
                   className="w-full rounded-2xl border border-gray-200 bg-gray-50 pl-10 pr-11 py-3 text-sm focus:bg-white focus:border-lucrai-500 focus:ring-lucrai-200"
-                />
+              />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}

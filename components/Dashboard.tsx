@@ -67,14 +67,14 @@ const Dashboard: React.FC = () => {
             <span className="inline-block mt-1 px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl bg-white/70 border border-white/70 text-slate-700 text-[11px] md:text-xs font-semibold capitalize shadow-sm">
               {periodLabel}
             </span>
-          </div>
+        </div>
 
           {/* Botão Sincronizar - só desktop */}
-          <button 
-            onClick={handleRefresh}
+           <button 
+             onClick={handleRefresh}
             className="hidden md:flex items-center justify-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-5 py-3 rounded-2xl text-sm font-bold shadow-float transition-all hover:-translate-y-0.5"
-          >
-            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+           >
+             <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
             <span className="whitespace-nowrap">{isRefreshing ? 'Atualizando…' : 'Sincronizar'}</span>
           </button>
 
@@ -85,8 +85,8 @@ const Dashboard: React.FC = () => {
             aria-label="Atualizar"
           >
             <RefreshCw size={18} className={isRefreshing ? 'animate-spin' : ''} />
-          </button>
-        </div>
+           </button>
+      </div>
 
         {error ? (
           <div className="mt-2 inline-flex items-center px-2 py-1 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-[11px] font-semibold">

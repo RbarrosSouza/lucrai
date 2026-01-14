@@ -1075,7 +1075,7 @@ const Transactions: React.FC = () => {
                               >
                                 <Trash2 size={14} className="text-rose-600" />
                                 Excluir
-                              </button>
+                          </button>
                             </div>
                           ) : null}
                         </div>
@@ -1102,26 +1102,26 @@ const Transactions: React.FC = () => {
 
       {/* 4. MODAL (NEW / EDIT) */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-lucrai-900/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200 border border-gray-100">
+        <div className="fixed inset-0 bg-lucrai-900/30 backdrop-blur-sm z-50 flex items-end md:items-center justify-center">
+          <div className="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl w-full md:max-w-2xl flex flex-col max-h-[95vh] md:max-h-[90vh] animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-200 border border-gray-100">
             
-            {/* Header */}
-            <div className="flex justify-between items-center px-6 pt-6 pb-2">
-               <h3 className="tx-tracking text-xl font-bold text-gray-900">{editingId ? 'Editar Lançamento' : 'Novo Lançamento'}</h3>
+            {/* Header - Compacto para mobile */}
+            <div className="flex justify-between items-center px-4 md:px-6 pt-4 md:pt-6 pb-2 shrink-0">
+               <h3 className="tx-tracking text-lg md:text-xl font-bold text-gray-900">{editingId ? 'Editar Lançamento' : 'Novo Lançamento'}</h3>
                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors">
                  <X size={20} />
                </button>
             </div>
 
-            {/* Body */}
-            <div className="flex-1 overflow-y-auto px-6 py-2">
+            {/* Body - Scroll interno */}
+            <div className="flex-1 overflow-y-auto px-4 md:px-6 py-2 min-h-0">
               
-              {/* Type & Value */}
-              <div className="flex flex-col items-center justify-center mb-6 mt-2">
-                 <div className="bg-gray-100 p-1 rounded-full flex text-sm font-bold mb-4 border border-gray-200">
+              {/* Type Toggle & Value - Compacto */}
+              <div className="flex flex-col items-center justify-center mb-4 md:mb-6 mt-1 md:mt-2">
+                 <div className="bg-gray-100 p-0.5 md:p-1 rounded-full flex text-xs md:text-sm font-bold mb-3 md:mb-4 border border-gray-200">
                     <button
                       onClick={() => setTransactionType(TransactionType.EXPENSE)}
-                      className={`px-6 py-1.5 rounded-full transition-all ${
+                      className={`px-4 md:px-6 py-1.5 rounded-full transition-all whitespace-nowrap ${
                         isExpense ? 'bg-lucrai-500 text-white shadow-sm shadow-lucrai-200' : 'text-gray-600 hover:text-gray-800 hover:bg-white'
                       }`}
                     >
@@ -1129,7 +1129,7 @@ const Transactions: React.FC = () => {
                     </button>
                     <button
                       onClick={() => setTransactionType(TransactionType.INCOME)}
-                      className={`px-6 py-1.5 rounded-full transition-all ${
+                      className={`px-4 md:px-6 py-1.5 rounded-full transition-all whitespace-nowrap ${
                         !isExpense ? 'bg-lucrai-500 text-white shadow-sm shadow-lucrai-200' : 'text-gray-600 hover:text-gray-800 hover:bg-white'
                       }`}
                     >
@@ -1137,32 +1137,32 @@ const Transactions: React.FC = () => {
                     </button>
                  </div>
                  <div className="relative w-full flex justify-center items-center">
-                    <span className="tx-tracking text-3xl font-bold mr-2 text-lucrai-600">R$</span>
+                    <span className="tx-tracking text-2xl md:text-3xl font-bold mr-2 text-lucrai-600">R$</span>
                     <input
                       type="number"
                       autoFocus
                       placeholder="0,00"
-                      className="tx-tracking tabular-nums text-5xl font-bold bg-transparent border-none focus:ring-0 outline-none w-full text-center placeholder-gray-300 text-lucrai-700"
+                      className="tx-tracking tabular-nums text-4xl md:text-5xl font-bold bg-transparent border-none focus:ring-0 outline-none w-full text-center placeholder-gray-300 text-lucrai-700"
                       value={amount}
                       onChange={e => setAmount(e.target.value)}
                     />
                  </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {/* Desc, Doc, Supplier */}
-                <div className="grid grid-cols-12 gap-3">
+                <div className="grid grid-cols-12 gap-2 md:gap-3">
                    <div className="col-span-8">
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Descrição</label>
-                      <input type="text" className="w-full pl-3 pr-3 py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-gray-200 rounded-xl focus:ring-0 outline-none text-gray-800 font-medium" placeholder="Ex: Aluguel" value={desc} onChange={e => setDesc(e.target.value)} />
+                      <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 md:mb-1.5">Descrição</label>
+                      <input type="text" className="w-full pl-3 pr-3 py-2 md:py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-gray-200 rounded-xl focus:ring-0 outline-none text-gray-800 font-medium text-sm" placeholder="Ex: Aluguel" value={desc} onChange={e => setDesc(e.target.value)} />
                    </div>
                    <div className="col-span-4">
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Nº Documento</label>
-                      <input type="text" className="w-full pl-3 pr-3 py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-gray-200 rounded-xl focus:ring-0 outline-none text-gray-800" placeholder="NF-123" value={documentNumber} onChange={e => setDocumentNumber(e.target.value)} />
+                      <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 md:mb-1.5">Nº Documento</label>
+                      <input type="text" className="w-full pl-3 pr-3 py-2 md:py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-gray-200 rounded-xl focus:ring-0 outline-none text-gray-800 text-sm" placeholder="NF-123" value={documentNumber} onChange={e => setDocumentNumber(e.target.value)} />
                    </div>
                    
                    <div className="col-span-12 md:col-span-4">
-                      <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Fornecedor / Cliente</label>
+                      <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 md:mb-1.5">Fornecedor / Cliente</label>
                       <SupplierSelect
                         suppliers={suppliers}
                         value={formSupplierId}
@@ -1176,7 +1176,7 @@ const Transactions: React.FC = () => {
                    </div>
 
                    <div className="col-span-12 md:col-span-8">
-                     <label className="block text-xs font-bold text-gray-400 uppercase tracking-wide mb-1.5">Centro de Custo</label>
+                     <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 md:mb-1.5">Centro de Custo</label>
                      <CostCenterSelect
                        categories={categories}
                        costCenters={costCenters}
@@ -1194,12 +1194,12 @@ const Transactions: React.FC = () => {
                 </div>
 
                 {/* Dates & Mode */}
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <div className="bg-gray-50 p-3 md:p-4 rounded-xl border border-gray-100">
                    {!editingId && (
-                     <div className="flex bg-white p-1 rounded-lg border border-gray-200 mb-4">
+                     <div className="grid grid-cols-3 bg-white p-0.5 md:p-1 rounded-lg border border-gray-200 mb-3 md:mb-4 gap-0.5">
                         <button
                           onClick={() => setLaunchMode('SINGLE')}
-                          className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                          className={`py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap ${
                             launchMode === 'SINGLE'
                               ? 'bg-lucrai-500 text-white shadow-sm shadow-lucrai-200'
                               : 'text-gray-600 hover:bg-gray-50'
@@ -1209,7 +1209,7 @@ const Transactions: React.FC = () => {
                         </button>
                         <button
                           onClick={() => setLaunchMode('INSTALLMENT')}
-                          className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                          className={`py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap ${
                             launchMode === 'INSTALLMENT'
                               ? 'bg-lucrai-500 text-white shadow-sm shadow-lucrai-200'
                               : 'text-gray-600 hover:bg-gray-50'
@@ -1219,7 +1219,7 @@ const Transactions: React.FC = () => {
                         </button>
                         <button
                           onClick={() => setLaunchMode('RECURRENT')}
-                          className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${
+                          className={`py-1.5 text-[10px] md:text-xs font-bold rounded-md transition-all whitespace-nowrap ${
                             launchMode === 'RECURRENT'
                               ? 'bg-lucrai-500 text-white shadow-sm shadow-lucrai-200'
                               : 'text-gray-600 hover:bg-gray-50'
@@ -1230,26 +1230,26 @@ const Transactions: React.FC = () => {
                      </div>
                    )}
 
-                   <div className="grid grid-cols-2 gap-4">
+                   <div className="grid grid-cols-2 gap-2 md:gap-4">
                       <div>
-                         <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Data Competência (DRE)</label>
-                         <input type="date" className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg outline-none text-gray-700" value={dateCompetence} onChange={e => setDateCompetence(e.target.value)} />
+                         <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase mb-1">Data Comp. (DRE)</label>
+                         <input type="date" className="w-full px-2 md:px-3 py-2 text-xs md:text-sm bg-white border border-gray-200 rounded-lg outline-none text-gray-700" value={dateCompetence} onChange={e => setDateCompetence(e.target.value)} />
                       </div>
                       <div>
-                         <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">Vencimento</label>
-                         <input type="date" className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg outline-none text-gray-700" value={dateDue} onChange={e => setDateDue(e.target.value)} />
+                         <label className="block text-[9px] md:text-[10px] font-bold text-gray-400 uppercase mb-1">Vencimento</label>
+                         <input type="date" className="w-full px-2 md:px-3 py-2 text-xs md:text-sm bg-white border border-gray-200 rounded-lg outline-none text-gray-700" value={dateDue} onChange={e => setDateDue(e.target.value)} />
                       </div>
                       
                       {(!editingId && (launchMode === 'INSTALLMENT' || launchMode === 'RECURRENT')) && (
-                        <div className="col-span-2 flex items-center bg-lucrai-50 p-2 rounded-lg gap-3 border border-lucrai-100">
-                           <span className="text-xs font-semibold text-lucrai-700 pl-2">
-                             {launchMode === 'INSTALLMENT' ? 'Quantidade de Parcelas:' : 'Repetir por meses:'}
+                        <div className="col-span-2 flex items-center bg-lucrai-50 p-2 rounded-lg gap-2 md:gap-3 border border-lucrai-100">
+                           <span className="text-[10px] md:text-xs font-semibold text-lucrai-700 pl-1 md:pl-2 flex-1">
+                             {launchMode === 'INSTALLMENT' ? 'Parcelas:' : 'Repetir (meses):'}
                            </span>
                            <input
                              type="number"
                              min="2"
                              max="120"
-                             className="w-16 p-1 text-center text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-lucrai-200"
+                             className="w-14 md:w-16 p-1 text-center text-sm font-bold text-gray-900 bg-white border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-lucrai-200"
                              value={launchMode === 'INSTALLMENT' ? installmentsCount : recurrenceCount}
                              onChange={e => launchMode === 'INSTALLMENT' ? setInstallmentsCount(parseInt(e.target.value)) : setRecurrenceCount(parseInt(e.target.value))}
                            />
@@ -1258,34 +1258,36 @@ const Transactions: React.FC = () => {
                    </div>
                 </div>
 
-                {/* Payment */}
-                <div className="flex items-center justify-between pt-2">
-                   <span className="text-sm font-medium text-gray-600 pl-1">Já foi pago/recebido?</span>
+                {/* Payment Toggle */}
+                <div className="flex items-center justify-between py-1 md:pt-2">
+                   <span className="text-xs md:text-sm font-medium text-gray-600 pl-1">Já foi pago/recebido?</span>
                    <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" className="sr-only peer" checked={status === TransactionStatus.PAID} onChange={() => setStatus(prev => prev === TransactionStatus.PAID ? TransactionStatus.PENDING : TransactionStatus.PAID)} />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-lucrai-500"></div>
+                      <div className="w-10 md:w-11 h-5 md:h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 md:after:h-5 after:w-4 md:after:w-5 after:transition-all peer-checked:bg-lucrai-500"></div>
                    </label>
                 </div>
                 
                 {status === TransactionStatus.PAID && (
-                   <div className="animate-in fade-in slide-in-from-top-1 bg-lucrai-50 p-4 rounded-xl border border-lucrai-100 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="col-span-1 md:col-span-2">
-                         <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Data do Pagamento</label>
-                         <input type="date" className="w-full bg-white border-none text-sm text-gray-900 font-medium rounded-lg p-2 focus:ring-0" value={datePayment} onChange={e => setDatePayment(e.target.value)} />
-                      </div>
+                   <div className="animate-in fade-in slide-in-from-top-1 bg-lucrai-50 p-3 md:p-4 rounded-xl border border-lucrai-100 grid grid-cols-1 gap-2 md:gap-4">
                       <div>
-                         <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Banco / Conta</label>
-                         <select className="w-full bg-white border-none text-sm text-gray-900 font-medium rounded-lg p-2 focus:ring-0" value={bankAccountId} onChange={e => setBankAccountId(e.target.value)}>
-                            <option value="">Selecione...</option>
-                            {bankAccounts.filter((b) => b.isActive).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                         </select>
+                         <label className="block text-[10px] md:text-xs font-bold text-gray-700 uppercase mb-1">Data do Pagamento</label>
+                         <input type="date" className="w-full bg-white border border-gray-200 text-xs md:text-sm text-gray-900 font-medium rounded-lg p-2 focus:ring-0 outline-none" value={datePayment} onChange={e => setDatePayment(e.target.value)} />
                       </div>
-                      <div>
-                         <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Forma Pagto</label>
-                         <select className="w-full bg-white border-none text-sm text-gray-900 font-medium rounded-lg p-2 focus:ring-0" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}>
-                            <option value="">Selecione...</option>
-                            {Object.values(PaymentMethod).map(m => <option key={m} value={m}>{m}</option>)}
-                         </select>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                           <label className="block text-[10px] md:text-xs font-bold text-gray-700 uppercase mb-1">Banco / Conta</label>
+                           <select className="w-full bg-white border border-gray-200 text-xs md:text-sm text-gray-900 font-medium rounded-lg p-2 focus:ring-0 outline-none" value={bankAccountId} onChange={e => setBankAccountId(e.target.value)}>
+                              <option value="">Selecione...</option>
+                              {bankAccounts.filter((b) => b.isActive).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                           </select>
+                        </div>
+                        <div>
+                           <label className="block text-[10px] md:text-xs font-bold text-gray-700 uppercase mb-1">Forma Pagto</label>
+                           <select className="w-full bg-white border border-gray-200 text-xs md:text-sm text-gray-900 font-medium rounded-lg p-2 focus:ring-0 outline-none" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}>
+                              <option value="">Selecione...</option>
+                              {Object.values(PaymentMethod).map(m => <option key={m} value={m}>{m}</option>)}
+                           </select>
+                        </div>
                       </div>
                    </div>
                 )}
@@ -1293,19 +1295,23 @@ const Transactions: React.FC = () => {
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-3xl flex justify-between items-center">
-               <div className="text-xs text-gray-400 italic">* Campos obrigatórios</div>
-               <div className="flex gap-3">
-                  <button onClick={() => setIsModalOpen(false)} className="px-5 py-2.5 text-gray-500 hover:bg-gray-100 rounded-xl text-sm font-medium transition-colors">Cancelar</button>
-                  <button 
-                    onClick={handleSave}
-                    disabled={!amount || !desc || !costCenterId || (status === TransactionStatus.PAID && !bankAccountId)}
-                    className="px-8 py-2.5 text-white rounded-xl text-sm font-bold shadow-lg shadow-lucrai-200 transform active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-lucrai-500 hover:bg-lucrai-600"
-                  >
-                    <Save size={18} />
-                    {editingId ? 'Salvar Alterações' : 'Confirmar Lançamento'}
-                  </button>
+            {/* Footer - Fixo no fundo, compacto para mobile */}
+            <div className="p-3 md:p-6 border-t border-gray-100 bg-gray-50/80 rounded-b-3xl shrink-0 safe-area-pb">
+               <div className="flex flex-col-reverse md:flex-row md:justify-between md:items-center gap-2 md:gap-0">
+                  <div className="text-[10px] md:text-xs text-gray-400 italic text-center md:text-left">* Campos obrigatórios</div>
+                  <div className="flex gap-2 md:gap-3">
+                     <button onClick={() => setIsModalOpen(false)} className="flex-1 md:flex-none px-4 md:px-5 py-2.5 text-gray-500 hover:bg-gray-100 rounded-xl text-xs md:text-sm font-medium transition-colors">
+                       Cancelar
+                     </button>
+                     <button 
+                       onClick={handleSave}
+                       disabled={!amount || !desc || !costCenterId || (status === TransactionStatus.PAID && !bankAccountId)}
+                       className="flex-1 md:flex-none px-4 md:px-8 py-2.5 text-white rounded-xl text-xs md:text-sm font-bold shadow-lg shadow-lucrai-200 transform active:scale-95 transition-all flex items-center justify-center gap-1.5 md:gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-lucrai-500 hover:bg-lucrai-600"
+                     >
+                       <Save size={16} />
+                       <span className="whitespace-nowrap">{editingId ? 'Salvar' : 'Confirmar'}</span>
+                     </button>
+                  </div>
                </div>
             </div>
 
