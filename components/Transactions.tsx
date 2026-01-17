@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { 
   Search, Plus, Filter, CheckCircle, Clock, AlertTriangle, 
@@ -26,6 +26,157 @@ import {
 const addMonths = addMonthsISO;
 const getFirstDayOfMonth = () => firstDayOfCurrentMonthISO();
 const getLastDayOfMonth = () => lastDayOfCurrentMonthISO();
+
+// --- SWIPEABLE CARD COMPONENT ---
+
+interface SwipeableTransactionCardProps {
+  transaction: Transaction;
+  costCenter?: CostCenter;
+  supplierLabel: string;
+  onEdit: () => void;
+  onDelete: () => void;
+  renderStatusBadge: (status: TransactionStatus, type: TransactionType) => React.ReactNode;
+}
+
+const SWIPE_THRESHOLD = 80; // pixels para revelar ações
+
+function SwipeableTransactionCard({
+  transaction: t,
+  costCenter: cc,
+  supplierLabel,
+  onEdit,
+  onDelete,
+  renderStatusBadge,
+}: SwipeableTransactionCardProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [translateX, setTranslateX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startXRef = useRef(0);
+  const currentXRef = useRef(0);
+  
+  const isExpense = t.type === TransactionType.EXPENSE;
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    startXRef.current = e.touches[0].clientX;
+    currentXRef.current = translateX;
+    setIsDragging(true);
+  }, [translateX]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const diff = e.touches[0].clientX - startXRef.current;
+    const newTranslate = Math.max(-160, Math.min(0, currentXRef.current + diff));
+    setTranslateX(newTranslate);
+  }, [isDragging]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+    // Snap to open or closed
+    if (translateX < -SWIPE_THRESHOLD) {
+      setTranslateX(-160); // Aberto
+    } else {
+      setTranslateX(0); // Fechado
+    }
+  }, [translateX]);
+
+  const handleClick = useCallback(() => {
+    if (translateX < -10) {
+      // Se estiver aberto, fecha
+      setTranslateX(0);
+    } else {
+      // Se estiver fechado, abre edição
+      onEdit();
+    }
+  }, [translateX, onEdit]);
+
+  const handleEditAction = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTranslateX(0);
+    onEdit();
+  }, [onEdit]);
+
+  const handleDeleteAction = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTranslateX(0);
+    onDelete();
+  }, [onDelete]);
+
+  return (
+    <div ref={containerRef} className="relative overflow-hidden">
+      {/* Ações de fundo (reveladas ao arrastar) */}
+      <div className="absolute inset-y-0 right-0 flex">
+        <button
+          onClick={handleEditAction}
+          className="w-20 flex flex-col items-center justify-center bg-lucrai-500 text-white transition-colors active:bg-lucrai-600"
+        >
+          <Edit2 size={18} />
+          <span className="text-[10px] font-medium mt-1">Editar</span>
+        </button>
+        <button
+          onClick={handleDeleteAction}
+          className="w-20 flex flex-col items-center justify-center bg-rose-500 text-white transition-colors active:bg-rose-600"
+        >
+          <Trash2 size={18} />
+          <span className="text-[10px] font-medium mt-1">Excluir</span>
+        </button>
+      </div>
+
+      {/* Card principal (desliza) */}
+      <div
+        className="relative bg-white p-3 transition-transform active:bg-slate-50"
+        style={{
+          transform: `translateX(${translateX}px)`,
+          transition: isDragging ? 'none' : 'transform 0.2s ease-out',
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={handleClick}
+      >
+        {/* Row 1: Descrição + Valor */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-gray-900 truncate">{t.description}</p>
+            <p className="text-[11px] text-gray-500 truncate flex items-center gap-1 mt-0.5">
+              <Building size={10} className="shrink-0" />
+              {supplierLabel}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className={`text-sm font-bold tabular-nums ${isExpense ? 'text-rose-600' : 'text-emerald-600'}`}>
+              {isExpense ? '-' : '+'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            </p>
+          </div>
+        </div>
+        
+        {/* Row 2: Data + Status + CC */}
+        <div className="flex items-center gap-2 mt-2 flex-wrap">
+          <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+            {formatDateBR(t.date)}
+          </span>
+          {renderStatusBadge(t.status, t.type)}
+          {cc && (
+            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-[100px]">
+              {cc.name}
+            </span>
+          )}
+          {t.installments && (
+            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+              {t.installments.current}/{t.installments.total}
+            </span>
+          )}
+        </div>
+
+        {/* Indicador visual de swipe (sutil) */}
+        {translateX === 0 && (
+          <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none">
+            <ArrowRight size={12} className="text-gray-400" />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 async function trySeedDefaultDre(): Promise<{ ok: true } | { ok: false; reason: string }> {
   try {
@@ -84,6 +235,10 @@ const Transactions: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [defaultSupplierId, setDefaultSupplierId] = useState<string>('');
   const [openRowMenuId, setOpenRowMenuId] = useState<string | null>(null);
+  
+  // --- DELETE CONFIRMATION STATE ---
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // --- FORM STATE ---
   const [launchMode, setLaunchMode] = useState<'SINGLE' | 'INSTALLMENT' | 'RECURRENT'>('SINGLE');
@@ -521,16 +676,36 @@ const Transactions: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este lançamento?')) {
-      try {
-        const { error } = await supabase.from('transactions').delete().eq('id', id);
-        if (error) throw error;
-        setTransactions(prev => prev.filter(t => t.id !== id));
-      } catch (e) {
-        alert('Erro ao excluir lançamento.');
-      }
+  // Abre modal de confirmação de exclusão
+  const openDeleteConfirm = (id: string) => {
+    setDeleteConfirmId(id);
+  };
+
+  // Executa a exclusão após confirmação
+  const confirmDelete = async () => {
+    if (!deleteConfirmId) return;
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.from('transactions').delete().eq('id', deleteConfirmId);
+      if (error) throw error;
+      setTransactions(prev => prev.filter(t => t.id !== deleteConfirmId));
+      setDeleteConfirmId(null);
+      setIsModalOpen(false); // Fecha o modal de edição se estiver aberto
+    } catch (e) {
+      alert('Erro ao excluir lançamento.');
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  // Cancela a exclusão
+  const cancelDelete = () => {
+    setDeleteConfirmId(null);
+  };
+
+  // Função legada para desktop (menu dropdown)
+  const handleDelete = async (id: string) => {
+    openDeleteConfirm(id);
   };
 
   const handleSave = async () => {
@@ -926,54 +1101,19 @@ const Transactions: React.FC = () => {
             <div className="p-8 text-center text-gray-500">Carregando lançamentos...</div>
           ) : (
           <>
-          {/* MOBILE: Cards View */}
+          {/* MOBILE: Cards View com Swipe */}
           <div className="md:hidden divide-y divide-gray-100">
-            {filteredTransactions.map((t) => {
-              const cc = costCenters.find(c => c.id === t.costCenterId);
-              const supplierLabel = getSupplierDisplayName(t);
-              const isExpense = t.type === TransactionType.EXPENSE;
-              return (
-                <div 
-                  key={t.id} 
-                  className="p-3 hover:bg-slate-50 transition-colors active:bg-slate-100"
-                  onClick={() => handleEdit(t)}
-                >
-                  {/* Row 1: Descrição + Valor */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{t.description}</p>
-                      <p className="text-[11px] text-gray-500 truncate flex items-center gap-1 mt-0.5">
-                        <Building size={10} className="shrink-0" />
-                        {supplierLabel}
-                      </p>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className={`text-sm font-bold tabular-nums ${isExpense ? 'text-rose-600' : 'text-emerald-600'}`}>
-                        {isExpense ? '-' : '+'} R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Row 2: Data + Status + CC */}
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                      {formatDateBR(t.date)}
-                    </span>
-                    {renderStatusBadge(t.status, t.type)}
-                    {cc && (
-                      <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-[100px]">
-                        {cc.name}
-                      </span>
-                    )}
-                    {t.installments && (
-                      <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                        {t.installments.current}/{t.installments.total}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            {filteredTransactions.map((t) => (
+              <SwipeableTransactionCard
+                key={t.id}
+                transaction={t}
+                costCenter={costCenters.find(c => c.id === t.costCenterId)}
+                supplierLabel={getSupplierDisplayName(t)}
+                onEdit={() => handleEdit(t)}
+                onDelete={() => openDeleteConfirm(t.id)}
+                renderStatusBadge={renderStatusBadge}
+              />
+            ))}
           </div>
 
           {/* DESKTOP: Table View */}
@@ -1108,9 +1248,21 @@ const Transactions: React.FC = () => {
             {/* Header - Compacto para mobile */}
             <div className="flex justify-between items-center px-4 md:px-6 pt-4 md:pt-6 pb-2 shrink-0">
                <h3 className="tx-tracking text-lg md:text-xl font-bold text-gray-900">{editingId ? 'Editar Lançamento' : 'Novo Lançamento'}</h3>
-               <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors">
-                 <X size={20} />
-               </button>
+               <div className="flex items-center gap-1">
+                 {/* Botão de excluir - visível apenas na edição */}
+                 {editingId && (
+                   <button 
+                     onClick={() => openDeleteConfirm(editingId)} 
+                     className="text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-full p-2 transition-colors"
+                     title="Excluir lançamento"
+                   >
+                     <Trash2 size={20} />
+                   </button>
+                 )}
+                 <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-2 transition-colors">
+                   <X size={20} />
+                 </button>
+               </div>
             </div>
 
             {/* Body - Scroll interno */}
@@ -1327,6 +1479,49 @@ const Transactions: React.FC = () => {
           setFormSupplierId(s.id);
         }}
       />
+
+      {/* MODAL DE CONFIRMAÇÃO DE EXCLUSÃO */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm animate-in zoom-in-95 duration-200">
+            <div className="p-6 text-center">
+              <div className="w-14 h-14 rounded-full bg-rose-100 flex items-center justify-center mx-auto mb-4">
+                <Trash2 size={28} className="text-rose-500" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Excluir lançamento?</h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Esta ação não pode ser desfeita. O lançamento será removido permanentemente.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={cancelDelete}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2.5 text-white bg-rose-500 hover:bg-rose-600 rounded-xl text-sm font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <RefreshCw size={16} className="animate-spin" />
+                      Excluindo...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={16} />
+                      Excluir
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
