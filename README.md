@@ -52,3 +52,54 @@ O documento oficial de identidade visual do Lucraí está em `Redmi Designer.md`
 - **Vermelho**: somente **erro/alerta/atrasado** e ações destrutivas (Excluir)
 
 Qualquer uso de verde como cor de marca (sidebar, botões principais, tabs, foco padrão) é **proibido**.
+
+---
+
+## Changelog
+
+### 31/01/2026 - Melhorias em Lançamentos Futuros e Parcelamentos
+
+**Problema Resolvido:** Lançamentos com vencimento futuro não apareciam na lista, apesar de serem calculados corretamente no card "Em Aberto (Previsto)".
+
+**Implementações:**
+
+#### 1. Visualização de Lançamentos Futuros (Abordagem Híbrida)
+
+Duas funcionalidades complementares foram implementadas:
+
+- **Filtro Inteligente por Status PENDING:**
+  - Ao filtrar por status "Em Aberto", o range de datas é automaticamente expandido em +12 meses
+  - Comportamento natural e intuitivo: "Em Aberto" mostra TODOS os lançamentos abertos, independente da data
+  
+- **Botão Dedicado "Lançamentos Futuros":**
+  - Novo toggle na barra de filtros (mobile e desktop)
+  - Quando ativado, mostra APENAS lançamentos futuros não pagos
+  - Estilo visual: amber quando ativo, cinza quando inativo
+
+#### 2. Correção: DRE de Parcelamentos
+
+**Regra de Negócio Aplicada:**
+- **Parcelamentos:** Valor TOTAL entra na DRE no mês da compra (competência fixa)
+- **Recorrências:** Cada lançamento entra na DRE no seu mês de vencimento (competência variável)
+
+**Implementação:**
+- Adicionada constante `FIXED_COMPETENCE_DATE` no modo INSTALLMENT
+- Garante que todas as parcelas tenham a mesma competência DRE (mês da compra)
+- Previne duplicação de valores na DRE ao longo dos meses
+- Parcelas impactam apenas o fluxo de caixa (vencimentos variam)
+
+#### 3. Documentação de Regras de Negócio
+
+Adicionados comentários explicativos no código sobre:
+- Diferença entre parcelamentos e recorrências
+- Regras de competência DRE para cada tipo
+- Exemplos práticos de uso
+
+**Arquivos Modificados:**
+- `components/Transactions.tsx`: Lógica de filtros e criação de lançamentos
+
+**Benefícios:**
+- ✅ Lançamentos futuros agora são visíveis na lista
+- ✅ Maior flexibilidade de visualização (filtro inteligente + botão dedicado)
+- ✅ DRE correta para parcelamentos (sem duplicação)
+- ✅ Código mais legível e manutenível com regras documentadas
