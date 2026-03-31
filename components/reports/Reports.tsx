@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar, ChevronDown, ChevronRight, Download, FileText, HelpCircle } from 'lucide-react';
+import MonthPicker from '../MonthPicker';
 import type { Category, DrilldownState, Transaction } from '../../types';
 import { ReportType } from '../../types';
 import { DrilldownModal } from './DrilldownModal';
@@ -323,12 +324,6 @@ export default function Reports() {
     );
   };
 
-  const monthLabel = useMemo(() => {
-    const [y, m] = selectedMonth.split('-').map((v) => Number(v));
-    const d = new Date(y, m - 1, 1);
-    return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  }, [selectedMonth]);
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -343,16 +338,12 @@ export default function Reports() {
         </div>
 
         <div className="flex gap-2">
-          <label className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer">
-            <Calendar size={16} />
-            <span className="capitalize">{monthLabel}</span>
-            <input
-              type="month"
-              className="sr-only"
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-            />
-          </label>
+          <MonthPicker
+            value={selectedMonth}
+            onChange={setSelectedMonth}
+            className="flex items-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer"
+            iconSize={16}
+          />
 
           <button
             onClick={() => reload()}

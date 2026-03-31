@@ -1,12 +1,7 @@
 import React, { useMemo } from 'react';
 import { Calendar, RefreshCw } from 'lucide-react';
 import type { DashboardBasis, DashboardPeriodMode } from './dashboardTypes';
-
-function monthLabelPtBr(yyyyMm: string) {
-  const [y, m] = yyyyMm.split('-').map((v) => Number(v));
-  const d = new Date(y, (m || 1) - 1, 1);
-  return d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-}
+import MonthPicker from '../MonthPicker';
 
 export function DashboardHeaderControls(props: {
   basis: DashboardBasis;
@@ -89,16 +84,12 @@ export function DashboardHeaderControls(props: {
 
       {/* Period picker */}
       {periodMode === 'MONTH' ? (
-        <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/70 border border-white/70 text-slate-700 text-xs font-semibold shadow-premium cursor-pointer">
-          <Calendar size={14} className="text-slate-400" />
-          <span className="capitalize">{monthLabelPtBr(selectedMonth)}</span>
-          <input
-            type="month"
-            className="sr-only"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-          />
-        </label>
+        <MonthPicker
+          value={selectedMonth}
+          onChange={setSelectedMonth}
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/70 border border-white/70 text-slate-700 text-xs font-semibold shadow-premium cursor-pointer"
+          iconSize={14}
+        />
       ) : (
         <label className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/70 border border-white/70 text-slate-700 text-xs font-semibold shadow-premium cursor-pointer">
           <Calendar size={14} className="text-slate-400" />
