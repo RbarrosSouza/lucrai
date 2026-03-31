@@ -868,7 +868,7 @@ const Transactions: React.FC = () => {
   };
 
   return (
-    <div className="transactions-page space-y-3 md:space-y-6 h-full flex flex-col">
+    <div className="transactions-page space-y-3 md:space-y-3 h-full flex flex-col">
 
       {/* 1. SUMMARY CARDS - ultra compactos em mobile (horizontal scroll) */}
       {/* Mobile: cards em linha horizontal com scroll */}
@@ -902,46 +902,46 @@ const Transactions: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop: cards em grid normal */}
-      <div className="hidden md:grid grid-cols-3 gap-4">
-        <div className="bg-white/80 backdrop-blur p-6 rounded-3xl border border-white/60 shadow-premium flex items-center justify-between hover:-translate-y-1 hover:shadow-float transition-all">
+      {/* Desktop: cards em grid compacto */}
+      <div className="hidden md:grid grid-cols-3 gap-3">
+        <div className="bg-white/80 backdrop-blur px-4 py-3 rounded-2xl border border-white/60 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Realizado (Pago)</p>
-            <h3 className="tx-tracking text-2xl font-light mt-2 text-slate-800 tabular-nums">
+            <p className="text-[9px] uppercase tracking-widest font-bold text-slate-400">Realizado (Pago)</p>
+            <h3 className="tx-tracking text-lg font-semibold mt-0.5 text-slate-800 tabular-nums">
               R$ {summary.paidNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h3>
           </div>
-          <div className="p-3 rounded-3xl bg-slate-50 text-slate-400 border border-white/60">
-            <CheckCircle size={20} />
+          <div className="p-2 rounded-xl bg-slate-50 text-slate-400 border border-white/60">
+            <CheckCircle size={16} />
           </div>
         </div>
-        <div className="bg-white/80 backdrop-blur p-6 rounded-3xl border border-white/60 shadow-premium flex items-center justify-between hover:-translate-y-1 hover:shadow-float transition-all">
+        <div className="bg-white/80 backdrop-blur px-4 py-3 rounded-2xl border border-white/60 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Em Aberto (Previsto)</p>
-            <h3 className="tx-tracking text-2xl font-light mt-2 text-slate-800 tabular-nums">
+            <p className="text-[9px] uppercase tracking-widest font-bold text-slate-400">Em Aberto (Previsto)</p>
+            <h3 className="tx-tracking text-lg font-semibold mt-0.5 text-slate-800 tabular-nums">
               R$ {summary.openNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h3>
           </div>
-          <div className="p-3 rounded-3xl bg-slate-50 text-slate-400 border border-white/60">
-            <Clock size={20} />
+          <div className="p-2 rounded-xl bg-slate-50 text-slate-400 border border-white/60">
+            <Clock size={16} />
           </div>
         </div>
-        <div className="bg-white/80 backdrop-blur p-6 rounded-3xl border border-white/60 shadow-premium flex items-center justify-between hover:-translate-y-1 hover:shadow-float transition-all">
+        <div className="bg-white/80 backdrop-blur px-4 py-3 rounded-2xl border border-white/60 shadow-sm flex items-center justify-between">
           <div>
-            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Atrasado / Vencido</p>
-            <h3 className="tx-tracking text-2xl font-light mt-2 text-slate-800 tabular-nums">
+            <p className="text-[9px] uppercase tracking-widest font-bold text-slate-400">Atrasado / Vencido</p>
+            <h3 className="tx-tracking text-lg font-semibold mt-0.5 text-slate-800 tabular-nums">
               R$ {summary.overdueValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </h3>
-            <p className="text-[10px] text-slate-500 mt-0.5">{summary.overdueCount} lançamentos</p>
+            <p className="text-[9px] text-slate-500">{summary.overdueCount} lançamentos</p>
           </div>
-          <div className="p-3 rounded-3xl bg-slate-50 text-slate-400 border border-white/60">
-            <AlertTriangle size={20} />
+          <div className="p-2 rounded-xl bg-slate-50 text-slate-400 border border-white/60">
+            <AlertTriangle size={16} />
           </div>
         </div>
       </div>
 
       {/* 2. ACTIONS & FILTERS BAR - compacto mobile */}
-      <div className="bg-white/80 backdrop-blur p-2.5 md:p-5 rounded-xl md:rounded-3xl shadow-premium border border-white/60">
+      <div className="bg-white/80 backdrop-blur p-2.5 md:p-3 rounded-xl md:rounded-2xl shadow-sm border border-white/60">
         <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-stretch md:items-center justify-between">
           {/* Mobile: Filtro de tipo + ícones na mesma linha */}
           <div className="md:hidden flex items-center justify-between gap-2">
