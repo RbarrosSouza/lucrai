@@ -1,12 +1,7 @@
 import React, { useMemo } from 'react';
 import { Calendar } from 'lucide-react';
 import type { DashboardBasis, DashboardPeriodMode } from './dashboardTypes';
-
-function monthLabelPtBr(yyyyMm: string) {
-  const [y, m] = yyyyMm.split('-').map((v) => Number(v));
-  const d = new Date(y, (m || 1) - 1, 1);
-  return d.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' });
-}
+import MonthPicker from '../MonthPicker';
 
 interface Props {
   basis: DashboardBasis;
@@ -82,16 +77,12 @@ export function DashboardHeaderControlsCompact(props: Props) {
 
       {/* Seletor de período */}
       {periodMode === 'MONTH' ? (
-        <label className="inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-2.5 py-0.5 md:py-1 rounded-md md:rounded-lg bg-slate-100 text-slate-700 text-[10px] md:text-[11px] font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
-          <Calendar size={10} className="md:w-3 md:h-3 text-slate-400" />
-          <span className="capitalize">{monthLabelPtBr(selectedMonth)}</span>
-          <input
-            type="month"
-            className="sr-only"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-          />
-        </label>
+        <MonthPicker
+          value={selectedMonth}
+          onChange={setSelectedMonth}
+          className="inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-2.5 py-0.5 md:py-1 rounded-md md:rounded-lg bg-slate-100 text-slate-700 text-[10px] md:text-[11px] font-semibold cursor-pointer hover:bg-slate-200 transition-colors"
+          iconSize={10}
+        />
       ) : (
         <label className="inline-flex items-center gap-1 md:gap-1.5 px-2 md:px-2.5 py-0.5 md:py-1 rounded-md md:rounded-lg bg-slate-100 text-slate-700 text-[10px] md:text-[11px] font-semibold cursor-pointer hover:bg-slate-200 transition-colors">
           <Calendar size={10} className="md:w-3 md:h-3 text-slate-400" />
