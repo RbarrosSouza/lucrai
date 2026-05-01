@@ -1,0 +1,145 @@
+{
+  "name": "Lu Migration — Popular chatwoot_conversation_id",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-200, 0],
+      "id": "m0000001-0000-0000-0000-000000000001",
+      "name": "Rodar Uma Vez"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "ALTER TABLE phone_to_org ADD COLUMN IF NOT EXISTS chatwoot_conversation_id INTEGER",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [0, 0],
+      "id": "m0000002-0000-0000-0000-000000000002",
+      "name": "Criar Coluna",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT org_id, phone_number FROM phone_to_org WHERE status NOT IN ('cancelled', 'suspended') AND phone_number IS NOT NULL AND chatwoot_conversation_id IS NULL",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [200, 0],
+      "id": "m0000003-0000-0000-0000-000000000003",
+      "name": "Buscar Orgs Sem ID",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {"batchSize": 1, "options": {}},
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [420, 0],
+      "id": "m0000004-0000-0000-0000-000000000004",
+      "name": "Loop Orgs"
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.phone_number || '';\nconst digits = raw.replace(/\\D/g, '');\n\nlet phone55;\nif (digits.startsWith('55') && digits.length >= 12) {\n  phone55 = '+' + digits;\n} else {\n  phone55 = '+55' + digits;\n}\n\nreturn [{json: {\n  org_id: $json.org_id,\n  phone_number: $json.phone_number,\n  phone_busca: phone55\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [620, 0],
+      "id": "m0000009-0000-0000-0000-000000000009",
+      "name": "Formatar Telefone"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://72.60.143.202:3000/api/v1/accounts/1/contacts/search?q={{ encodeURIComponent($json.phone_busca) }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [820, 0],
+      "id": "m0000005-0000-0000-0000-000000000005",
+      "name": "Buscar Contato",
+      "credentials": {"httpHeaderAuth": {"id": "Kv3nULYLwRHJALhg", "name": "ChatWoot - Lucraí"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "=http://72.60.143.202:3000/api/v1/accounts/1/contacts/{{ $json.payload && $json.payload.length > 0 ? $json.payload[0].id : 0 }}/conversations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1020, 0],
+      "id": "m0000006-0000-0000-0000-000000000006",
+      "name": "Buscar Conversa",
+      "credentials": {"httpHeaderAuth": {"id": "Kv3nULYLwRHJALhg", "name": "ChatWoot - Lucraí"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const conversa = $input.first().json;\nconst orgData = $('Loop Orgs').item.json;\n\nconst conversation_id = conversa && conversa.payload && conversa.payload.length > 0\n  ? conversa.payload[0].id\n  : null;\n\nif (!conversation_id) {\n  console.log(`Sem conversa para org ${orgData.org_id} / ${orgData.phone_number}`);\n  return [];\n}\n\nreturn [{json: {\n  org_id: orgData.org_id,\n  phone_number: orgData.phone_number,\n  conversation_id\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1220, 0],
+      "id": "m0000007-0000-0000-0000-000000000007",
+      "name": "Extrair ID"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE phone_to_org SET chatwoot_conversation_id = {{ $json.conversation_id }} WHERE org_id = '{{ $json.org_id }}'",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1420, 0],
+      "id": "m0000008-0000-0000-0000-000000000008",
+      "name": "Salvar ID",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {
+        "content": "## Migration One-Time\n\nRodar UMA VEZ para popular `phone_to_org.chatwoot_conversation_id`.\n\n**Passos:**\n1. Clique em 'Rodar Uma Vez'\n2. Aguarda percorrer todos os orgs\n3. Verifique no banco: `SELECT org_id, chatwoot_conversation_id FROM phone_to_org`\n\nApós concluir, o cron V2 já funciona sem buscas no Chatwoot.",
+        "height": 280,
+        "width": 400
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-200, -200],
+      "id": "m9999999-0000-0000-0000-000000000001",
+      "name": "Instrução"
+    }
+  ],
+  "connections": {
+    "Rodar Uma Vez": {"main": [[{"node": "Criar Coluna", "type": "main", "index": 0}]]},
+    "Criar Coluna": {"main": [[{"node": "Buscar Orgs Sem ID", "type": "main", "index": 0}]]},
+    "Buscar Orgs Sem ID": {"main": [[{"node": "Loop Orgs", "type": "main", "index": 0}]]},
+    "Loop Orgs": {"main": [[], [{"node": "Formatar Telefone", "type": "main", "index": 0}]]},
+    "Formatar Telefone": {"main": [[{"node": "Buscar Contato", "type": "main", "index": 0}]]},
+    "Buscar Contato": {"main": [[{"node": "Buscar Conversa", "type": "main", "index": 0}]]},
+    "Buscar Conversa": {"main": [[{"node": "Extrair ID", "type": "main", "index": 0}]]},
+    "Extrair ID": {"main": [[{"node": "Salvar ID", "type": "main", "index": 0}]]},
+    "Salvar ID": {"main": [[{"node": "Loop Orgs", "type": "main", "index": 0}]]}
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveManualExecutions": true
+  },
+  "meta": {
+    "templateId": "lu-migration-chatwoot-id",
+    "instanceId": "lucrai"
+  }
+}
