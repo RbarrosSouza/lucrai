@@ -80,10 +80,11 @@ export interface Transaction {
   supplierName: string;
   
   // Details
-  documentNumber?: string; // New: Nota Fiscal / Recibo ID
-  paymentMethod?: PaymentMethod; // New
-  bankAccountId?: string; // New
-  
+  code?: string; // Código sequencial amigável (ex: 1001) — usado no WhatsApp
+  documentNumber?: string;
+  paymentMethod?: PaymentMethod;
+  bankAccountId?: string;
+
   installments?: { current: number; total: number };
 }
 
