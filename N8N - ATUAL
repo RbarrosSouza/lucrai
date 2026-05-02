@@ -1845,19 +1845,19 @@
       "parameters": {
         "toolDescription": "Use esta ferramenta EXCLUSIVAMENTE quando o usuário informar o NOME DA EMPRESA e o E-MAIL. O telefone é pego automaticamente do sistema.",
         "method": "POST",
-        "url": "https://reohtwrrbofobedqxezj.supabase.co/rest/v1/rpc/create_trial_v2",
+        "url": "https://knoxfwkofxxyycehcwag.supabase.co/rest/v1/rpc/create_trial_v2",
         "sendHeaders": true,
         "parametersHeaders": {
           "values": [
             {
               "name": "Authorization",
               "valueProvider": "fieldValue",
-              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltYXBzZG9vdWt1aXdjZnd3ZGV5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njk3MDUyMywiZXhwIjoyMDgyNTQ2NTIzfQ.wU6nsGweGYAOlAbTHXPzorRw8b7f80XhI2miU5hRmzA"
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
             },
             {
               "name": "apikey",
               "valueProvider": "fieldValue",
-              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltYXBzZG9vdWt1aXdjZnd3ZGV5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Njk3MDUyMywiZXhwIjoyMDgyNTQ2NTIzfQ.wU6nsGweGYAOlAbTHXPzorRw8b7f80XhI2miU5hRmzA"
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
             },
             {
               "name": "Content-Type",
@@ -2398,19 +2398,19 @@
       "parameters": {
         "toolDescription": "Use para EDITAR uma transação existente. Requer o 'code' numérico (ex: 1005). Passe apenas os campos que o usuário deseja mudar.",
         "method": "PATCH",
-        "url": "=https://reohtwrrbofobedqxezj.supabase.co/rest/v1/transactions?code=eq.{{ $fromAI('code', 'Número do lançamento, ex: 1005', 'number') }}&org_id=eq.{{ $('Set mensagens1').item.json.org_id }}",
+        "url": "=https://knoxfwkofxxyycehcwag.supabase.co/rest/v1/transactions?code=eq.{{ $fromAI('code', 'Número do lançamento, ex: 1005', 'number') }}&org_id=eq.{{ $('Set mensagens1').item.json.org_id }}",
         "sendHeaders": true,
         "parametersHeaders": {
           "values": [
             {
               "name": "Authorization",
               "valueProvider": "fieldValue",
-              "value": "Bearer sb_secret_aat4F3jpfxauW1i_89vtvw_ahUJOVzk"
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
             },
             {
               "name": "apikey",
               "valueProvider": "fieldValue",
-              "value": "sb_secret_aat4F3jpfxauW1i_89vtvw_ahUJOVzk"
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
             },
             {
               "name": "Content-Type",
@@ -2441,19 +2441,19 @@
       "parameters": {
         "toolDescription": "Use para EXCLUIR permanentemente uma transação. Requer o 'code' numérico (ex: 1005). SEMPRE peça confirmação do usuário antes de usar esta ferramenta.",
         "method": "DELETE",
-        "url": "=https://reohtwrrbofobedqxezj.supabase.co/rest/v1/transactions?code=eq.{{ $fromAI('code', 'Número do lançamento a excluir, ex: 1005', 'number') }}&org_id=eq.{{ $('Set mensagens1').item.json.org_id }}",
+        "url": "=https://knoxfwkofxxyycehcwag.supabase.co/rest/v1/transactions?code=eq.{{ $fromAI('code', 'Número do lançamento a excluir, ex: 1005', 'number') }}&org_id=eq.{{ $('Set mensagens1').item.json.org_id }}",
         "sendHeaders": true,
         "parametersHeaders": {
           "values": [
             {
               "name": "Authorization",
               "valueProvider": "fieldValue",
-              "value": "Bearer sb_secret_aat4F3jpfxauW1i_89vtvw_ahUJOVzk"
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
             },
             {
               "name": "apikey",
               "valueProvider": "fieldValue",
-              "value": "sb_secret_aat4F3jpfxauW1i_89vtvw_ahUJOVzk"
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
             },
             {
               "name": "Content-Type",
@@ -2475,19 +2475,19 @@
     {
       "parameters": {
         "toolDescription": "Use para visualizar as últimas 10 transações. Ajuda a Lu a confirmar códigos (#) e descrições antes de editar.",
-        "url": "=https://reohtwrrbofobedqxezj.supabase.co/rest/v1/transactions?org_id=eq.{{ $('Set mensagens1').item.json.org_id }}&select=code,description,amount,status,date&order=code.desc&limit=10",
+        "url": "=https://knoxfwkofxxyycehcwag.supabase.co/rest/v1/transactions?org_id=eq.{{ $('Set mensagens1').item.json.org_id }}&select=code,description,amount,status,date&order=code.desc&limit=10",
         "sendHeaders": true,
         "parametersHeaders": {
           "values": [
             {
               "name": "Authorization",
               "valueProvider": "fieldValue",
-              "value": "Bearer sb_secret_aat4F3jpfxauW1i_89vtvw_ahUJOVzk"
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
             },
             {
               "name": "apikey",
               "valueProvider": "fieldValue",
-              "value": "sb_secret_aat4F3jpfxauW1i_89vtvw_ahUJOVzk"
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
             },
             {
               "name": "Content-Type",
