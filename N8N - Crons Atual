@@ -1,0 +1,674 @@
+{
+  "name": "Lu Scheduler — Notificações Proativas",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {"interval": [{"field": "hours", "hoursInterval": 1}]},
+        "timezone": "America/Sao_Paulo"
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-220, 0],
+      "id": "10000001-0000-0000-0000-000000000001",
+      "name": "Agendador"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT EXTRACT(HOUR FROM (NOW() AT TIME ZONE 'America/Sao_Paulo'))::int as hora_sp, EXTRACT(DOW FROM (NOW() AT TIME ZONE 'America/Sao_Paulo'))::int as dow_sp, EXTRACT(DAY FROM (NOW() AT TIME ZONE 'America/Sao_Paulo'))::int as dia_sp, ((NOW() AT TIME ZONE 'America/Sao_Paulo')::date)::text as today_iso, ((NOW() AT TIME ZONE 'America/Sao_Paulo')::date + 1)::text as tomorrow_iso",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [-110, 0],
+      "id": "10000099-0000-0000-0000-000000000099",
+      "name": "Hora Atual SP",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {
+        "jsCode": "// === MODO TESTE ===\n// Quando FORCAR_TESTE = true, ignora janela horária e dispara TIPO_TESTE_MANUAL.\n// ⚠️ TROCAR PARA false ANTES DE COLOCAR EM PRODUÇÃO (senão o cron vai mandar mensagem toda hora).\nconst FORCAR_TESTE = false;\nconst TIPO_TESTE_MANUAL = 'L1_weekly';\n// Tipos válidos: L1_weekly, L2_dminus1, L3_recurrence, L4_dzero, R1_morning, R2_weekly, R3_monthly\n\nconst spData = $input.first().json;\nconst hora = spData.hora_sp;\nconst dow  = spData.dow_sp;\nconst dia  = spData.dia_sp;\n\nconst ctx = {hora, dow, dia};\nconst tipos = [];\n\nif (FORCAR_TESTE) {\n  // Modo teste → força o tipo configurado, ignora janela horária.\n  // Gates de notification_log continuam valendo (não duplica envio).\n  tipos.push({tipo: TIPO_TESTE_MANUAL, ...ctx, _teste: true});\n} else {\n  // Produção → checa janela horária real.\n  // DOW: 0=dom 1=seg 2=ter 3=qua 4=qui 5=sex 6=sab\n  if (dow === 1 && hora === 8)  tipos.push({tipo: 'L1_weekly', ...ctx});\n  if (hora === 18)              tipos.push({tipo: 'L2_dminus1', ...ctx});\n  if (hora === 9)               tipos.push({tipo: 'L3_recurrence', ...ctx});\n  if (hora === 19)              tipos.push({tipo: 'L4_dzero', ...ctx});\n  if (hora >= 7 && hora <= 10)  tipos.push({tipo: 'R1_morning', ...ctx});\n  if (dow === 5 && hora === 17) tipos.push({tipo: 'R2_weekly', ...ctx});\n  if (dia === 1 && hora === 8)  tipos.push({tipo: 'R3_monthly', ...ctx});\n}\n\nif (!tipos.length) return [{json: {_debug: true, hora, dow, dia, FORCAR_TESTE, nenhum_tipo_ativo: true}}];\n\nreturn tipos.map(t => ({json: t}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "id": "10000002-0000-0000-0000-000000000002",
+      "name": "Calcular Tipos Ativos"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [{"id": "sw-l1", "leftValue": "={{ $json.tipo }}", "rightValue": "L1_weekly", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [{"id": "sw-l2", "leftValue": "={{ $json.tipo }}", "rightValue": "L2_dminus1", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [{"id": "sw-l3", "leftValue": "={{ $json.tipo }}", "rightValue": "L3_recurrence", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [{"id": "sw-l4", "leftValue": "={{ $json.tipo }}", "rightValue": "L4_dzero", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [{"id": "sw-r1", "leftValue": "={{ $json.tipo }}", "rightValue": "R1_morning", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [{"id": "sw-r2", "leftValue": "={{ $json.tipo }}", "rightValue": "R2_weekly", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}},
+            {"conditions": {"options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2}, "conditions": [{"id": "sw-r3", "leftValue": "={{ $json.tipo }}", "rightValue": "R3_monthly", "operator": {"type": "string", "operation": "equals"}}], "combinator": "and"}}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [240, 0],
+      "id": "10000003-0000-0000-0000-000000000003",
+      "name": "Switch Tipo Notificação"
+    },
+
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.org_id, p.phone_number, p.chatwoot_conversation_id FROM phone_to_org p LEFT JOIN organizations o ON o.id = p.org_id WHERE p.status NOT IN ('cancelled', 'suspended') AND p.phone_number IS NOT NULL AND p.chatwoot_conversation_id IS NOT NULL AND COALESCE((o.lu_proactive_config->>'L1_weekly')::boolean, true) = true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [500, -1800],
+      "id": "20000001-0000-0000-0000-000000000001",
+      "name": "Buscar Orgs L1",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {"batchSize": 1, "options": {}},
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, -1800],
+      "id": "20000002-0000-0000-0000-000000000002",
+      "name": "Loop Orgs L1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT t.id, t.description, t.amount, t.date, TO_CHAR(t.date, 'DD/MM') as data_formatada, t.date::text as date_iso, EXTRACT(DOW FROM t.date)::int as dow, COALESCE(s.name, t.description) as supplier_name FROM transactions t LEFT JOIN suppliers s ON s.id = t.supplier_id WHERE t.org_id = '{{ $('Loop Orgs L1').item.json.org_id }}' AND t.type = 'EXPENSE' AND t.status = 'PENDING' AND t.date BETWEEN current_date AND current_date + 7 AND NOT EXISTS (SELECT 1 FROM notification_log nl WHERE nl.org_id = t.org_id AND nl.transaction_id = t.id AND nl.notification_type = 'L1_weekly' AND nl.sent_at >= date_trunc('week', current_date)) ORDER BY t.date ASC LIMIT 10",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [920, -1800],
+      "id": "20000003-0000-0000-0000-000000000003",
+      "name": "SQL Contas Semana",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {
+        "jsCode": "const itens = $input.all();\nconst orgData = $('Loop Orgs L1').item.json;\nconst chatwoot_conversation_id = orgData.chatwoot_conversation_id;\n\nif (!chatwoot_conversation_id || !itens.length || !itens[0].json.id) return [];\n\nconst fmt = (n) => new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2}).format(n || 0);\nconst DOW_PT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];\nconst cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);\n\nconst horaCtx = $('Hora Atual SP').first().json;\nconst today = horaCtx.today_iso;\nconst tomorrow = horaCtx.tomorrow_iso;\n\n// Agrupar transações por data\nconst grupos = new Map();\nfor (const i of itens) {\n  const d = i.json;\n  if (!grupos.has(d.date_iso)) {\n    grupos.set(d.date_iso, {\n      date_iso: d.date_iso,\n      data_formatada: d.data_formatada,\n      dow: Number(d.dow),\n      itens: [],\n      total: 0\n    });\n  }\n  const g = grupos.get(d.date_iso);\n  g.itens.push(d);\n  g.total += parseFloat(d.amount || 0);\n}\n\nconst totalGeral = itens.reduce((acc, i) => acc + parseFloat(i.json.amount || 0), 0);\nconst numContas = itens.length;\n\nconst renderGrupo = (g) => {\n  let label, prefix;\n  if (g.date_iso === today) {\n    label = `*Hoje (${DOW_PT[g.dow]}, ${g.data_formatada})*`;\n    prefix = '🟠';\n  } else if (g.date_iso === tomorrow) {\n    label = `*Amanhã (${DOW_PT[g.dow]}, ${g.data_formatada})*`;\n    prefix = '🗓️';\n  } else {\n    label = `*${cap(DOW_PT[g.dow])}, ${g.data_formatada}*`;\n    prefix = '🗓️';\n  }\n  if (g.itens.length === 1) {\n    const it = g.itens[0];\n    return `${prefix} ${label} · R$ ${fmt(it.amount)} — ${it.supplier_name}`;\n  }\n  const linhas = g.itens.map(it => `   • R$ ${fmt(it.amount)} — ${it.supplier_name}`).join('\\n');\n  return `${prefix} ${label} · R$ ${fmt(g.total)}\\n${linhas}`;\n};\n\nconst blocos = Array.from(grupos.values()).map(renderGrupo).join('\\n\\n');\nconst plural = numContas === 1 ? 'conta' : 'contas';\n\nconst mensagem = `🩵 Bom dia! ☀️\\n\\nResumo da sua semana: *R$ ${fmt(totalGeral)}* em ${numContas} ${plural} a pagar\\n\\n${blocos}\\n\\nMe avisa quando pagar alguma — eu marco aqui ✅`;\n\nreturn [{json: {\n  mensagem,\n  org_id: orgData.org_id,\n  chatwoot_conversation_id,\n  notification_type: 'L1_weekly',\n  transaction_ids: itens.map(i => i.json.id)\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, -1800],
+      "id": "20000004-0000-0000-0000-000000000004",
+      "name": "Formatar L1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://72.60.143.202:3000/api/v1/accounts/4/conversations/{{ $json.chatwoot_conversation_id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {"parameters": [{"name": "content", "value": "={{ $json.mensagem }}"}, {"name": "message_type", "value": "outgoing"}]},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, -1800],
+      "id": "20000005-0000-0000-0000-000000000005",
+      "name": "Chatwoot L1",
+      "credentials": {"httpHeaderAuth": {"id": "Kv3nULYLwRHJALhg", "name": "ChatWoot - Lucraí"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notification_log (org_id, notification_type) VALUES ('{{ $('Formatar L1').item.json.org_id }}', 'L1_weekly')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1520, -1800],
+      "id": "20000006-0000-0000-0000-000000000006",
+      "name": "Log L1",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.org_id, p.phone_number, p.chatwoot_conversation_id FROM phone_to_org p LEFT JOIN organizations o ON o.id = p.org_id WHERE p.status NOT IN ('cancelled', 'suspended') AND p.phone_number IS NOT NULL AND p.chatwoot_conversation_id IS NOT NULL AND COALESCE((o.lu_proactive_config->>'L2_dminus1')::boolean, true) = true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [500, -1200],
+      "id": "20000011-0000-0000-0000-000000000011",
+      "name": "Buscar Orgs L2",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {"batchSize": 1, "options": {}},
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, -1200],
+      "id": "20000012-0000-0000-0000-000000000012",
+      "name": "Loop Orgs L2"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT t.id, t.description, t.amount, TO_CHAR(t.date, 'DD/MM') as data_formatada, EXTRACT(DOW FROM t.date)::int as dow, COALESCE(s.name, t.description) as supplier_name FROM transactions t LEFT JOIN suppliers s ON s.id = t.supplier_id WHERE t.org_id = '{{ $('Loop Orgs L2').item.json.org_id }}' AND t.type = 'EXPENSE' AND t.status = 'PENDING' AND t.date = current_date + 1 AND NOT EXISTS (SELECT 1 FROM notification_log nl WHERE nl.org_id = t.org_id AND nl.transaction_id = t.id AND nl.notification_type = 'L1_weekly' AND nl.sent_at >= date_trunc('week', current_date)) AND NOT EXISTS (SELECT 1 FROM notification_log nl WHERE nl.org_id = t.org_id AND nl.transaction_id = t.id AND nl.notification_type = 'L2_dminus1' AND nl.sent_at >= current_date) ORDER BY t.amount DESC LIMIT 5",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [920, -1200],
+      "id": "20000013-0000-0000-0000-000000000013",
+      "name": "SQL D-1 Vencimento",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {
+        "jsCode": "const itens = $input.all();\nconst orgData = $('Loop Orgs L2').item.json;\nconst chatwoot_conversation_id = orgData.chatwoot_conversation_id;\n\nif (!chatwoot_conversation_id || !itens.length || !itens[0].json.id) return [];\n\nconst fmt = (n) => new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2}).format(n || 0);\nconst DOW_PT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];\nconst primeiro = itens[0].json;\nconst diaAbrev = DOW_PT[Number(primeiro.dow)] || '';\n\nlet mensagem;\nif (itens.length === 1) {\n  mensagem = `🩵 Olha só, *amanhã (${diaAbrev}, ${primeiro.data_formatada})* vence:\\n\\n💸 *R$ ${fmt(primeiro.amount)}* — ${primeiro.supplier_name}\\n\\nJá pagou ou tá programado pra amanhã? Me avisa que eu atualizo aqui ✅`;\n} else {\n  const total = itens.reduce((acc, i) => acc + parseFloat(i.json.amount || 0), 0);\n  const linhas = itens.map(i => `   • R$ ${fmt(i.json.amount)} — ${i.json.supplier_name}`).join('\\n');\n  mensagem = `🩵 Heads up! *Amanhã (${diaAbrev}, ${primeiro.data_formatada})* vencem ${itens.length} contas — *R$ ${fmt(total)}*:\\n\\n${linhas}\\n\\nQuer marcar alguma como paga? Só me dizer ✅`;\n}\n\nreturn [{json: {\n  mensagem,\n  org_id: orgData.org_id,\n  chatwoot_conversation_id,\n  notification_type: 'L2_dminus1',\n  transaction_id: primeiro.id\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, -1200],
+      "id": "20000014-0000-0000-0000-000000000014",
+      "name": "Formatar L2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://72.60.143.202:3000/api/v1/accounts/4/conversations/{{ $json.chatwoot_conversation_id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {"parameters": [{"name": "content", "value": "={{ $json.mensagem }}"}, {"name": "message_type", "value": "outgoing"}]},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, -1200],
+      "id": "20000015-0000-0000-0000-000000000015",
+      "name": "Chatwoot L2",
+      "credentials": {"httpHeaderAuth": {"id": "Kv3nULYLwRHJALhg", "name": "ChatWoot - Lucraí"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notification_log (org_id, notification_type, transaction_id) VALUES ('{{ $('Formatar L2').item.json.org_id }}', 'L2_dminus1', '{{ $('Formatar L2').item.json.transaction_id }}')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1520, -1200],
+      "id": "20000016-0000-0000-0000-000000000016",
+      "name": "Log L2",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.org_id, p.phone_number, p.chatwoot_conversation_id FROM phone_to_org p LEFT JOIN organizations o ON o.id = p.org_id WHERE p.status NOT IN ('cancelled', 'suspended') AND p.phone_number IS NOT NULL AND p.chatwoot_conversation_id IS NOT NULL AND COALESCE((o.lu_proactive_config->>'L3_recurrence')::boolean, true) = true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [500, -600],
+      "id": "20000021-0000-0000-0000-000000000021",
+      "name": "Buscar Orgs L3",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {"batchSize": 1, "options": {}},
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, -600],
+      "id": "20000022-0000-0000-0000-000000000022",
+      "name": "Loop Orgs L3"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH historico AS (SELECT supplier_id, description, amount, date, date_trunc('month', date) as mes, EXTRACT(DAY FROM date)::int as dia FROM transactions WHERE org_id = '{{ $('Loop Orgs L3').item.json.org_id }}' AND type='EXPENSE' AND status='PAID' AND date >= current_date - interval '6 months'), grupos AS (SELECT h1.supplier_id, h1.description as desc_ref, AVG(h2.amount) as valor_medio, AVG(h2.dia) as dia_medio, GREATEST(5, COALESCE(STDDEV(h2.dia), 5)) as janela, COUNT(DISTINCT h2.mes) as meses_distintos FROM historico h1 JOIN historico h2 ON h2.supplier_id = h1.supplier_id AND similarity(h1.description, h2.description) > 0.4 AND ABS(h2.amount - h1.amount) / NULLIF(h1.amount, 0) < 0.20 GROUP BY h1.supplier_id, h1.description HAVING COUNT(DISTINCT h2.mes) >= 3) SELECT DISTINCT ON (g.supplier_id) g.*, s.name as supplier_name FROM grupos g JOIN suppliers s ON s.id = g.supplier_id WHERE EXTRACT(DAY FROM current_date)::int BETWEEN GREATEST(1, (g.dia_medio - g.janela)::int) AND LEAST(31, (g.dia_medio + g.janela)::int) AND NOT EXISTS (SELECT 1 FROM transactions t WHERE t.org_id = '{{ $('Loop Orgs L3').item.json.org_id }}' AND t.supplier_id = g.supplier_id AND date_trunc('month', t.date) = date_trunc('month', current_date) AND similarity(t.description, g.desc_ref) > 0.4 AND ABS(t.amount - g.valor_medio) / NULLIF(g.valor_medio, 0) < 0.20) AND NOT EXISTS (SELECT 1 FROM notification_log nl WHERE nl.org_id = '{{ $('Loop Orgs L3').item.json.org_id }}' AND nl.notification_type = 'L3_recurrence' AND nl.supplier_id = g.supplier_id AND date_trunc('month', nl.sent_at) = date_trunc('month', current_date)) AND COALESCE(s.notify_recurrence, true) = true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [920, -600],
+      "id": "20000023-0000-0000-0000-000000000023",
+      "name": "SQL Recorrência",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {
+        "jsCode": "const itens = $input.all();\nconst orgData = $('Loop Orgs L3').item.json;\nconst chatwoot_conversation_id = orgData.chatwoot_conversation_id;\n\nif (!chatwoot_conversation_id || !itens.length || !itens[0].json.supplier_name) return [];\n\nconst fmt = (n) => new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2}).format(n || 0);\nconst item = itens[0].json;\nconst janela = Math.round(item.janela || 5);\nconst diaInicio = Math.max(1, Math.round(item.dia_medio) - janela);\nconst diaFim = Math.min(31, Math.round(item.dia_medio) + janela);\n\nconst mensagem = `🩵 Notei um padrão aqui 👀\\n\\nTodo mês você paga *${item.supplier_name}* — em torno de *R$ ${fmt(item.valor_medio)}*, geralmente entre os dias ${diaInicio} e ${diaFim}.\\n\\nEsse mês ainda não vi esse lançamento. Quer que eu já registre?\\n\\n✅ \"sim\" — crio como pendente\\n💸 \"sim, paguei\" — marco como pago\\n🔕 \"ignorar\" — paro de avisar desse fornecedor`;\n\nreturn [{json: {\n  mensagem,\n  org_id: orgData.org_id,\n  chatwoot_conversation_id,\n  notification_type: 'L3_recurrence',\n  supplier_id: item.supplier_id\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, -600],
+      "id": "20000024-0000-0000-0000-000000000024",
+      "name": "Formatar L3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://72.60.143.202:3000/api/v1/accounts/4/conversations/{{ $json.chatwoot_conversation_id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {"parameters": [{"name": "content", "value": "={{ $json.mensagem }}"}, {"name": "message_type", "value": "outgoing"}]},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, -600],
+      "id": "20000025-0000-0000-0000-000000000025",
+      "name": "Chatwoot L3",
+      "credentials": {"httpHeaderAuth": {"id": "Kv3nULYLwRHJALhg", "name": "ChatWoot - Lucraí"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notification_log (org_id, notification_type, supplier_id) VALUES ('{{ $('Formatar L3').item.json.org_id }}', 'L3_recurrence', '{{ $('Formatar L3').item.json.supplier_id }}')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1520, -600],
+      "id": "20000026-0000-0000-0000-000000000026",
+      "name": "Log L3",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.org_id, p.phone_number, p.chatwoot_conversation_id FROM phone_to_org p LEFT JOIN organizations o ON o.id = p.org_id WHERE p.status NOT IN ('cancelled', 'suspended') AND p.phone_number IS NOT NULL AND p.chatwoot_conversation_id IS NOT NULL AND COALESCE((o.lu_proactive_config->>'L4_dzero')::boolean, true) = true",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [500, 0],
+      "id": "20000031-0000-0000-0000-000000000031",
+      "name": "Buscar Orgs L4",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {"batchSize": 1, "options": {}},
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, 0],
+      "id": "20000032-0000-0000-0000-000000000032",
+      "name": "Loop Orgs L4"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT t.id, t.description, t.amount, COALESCE(s.name, t.description) as supplier_name FROM transactions t LEFT JOIN suppliers s ON s.id = t.supplier_id WHERE t.org_id = '{{ $('Loop Orgs L4').item.json.org_id }}' AND t.type = 'EXPENSE' AND t.status = 'PENDING' AND t.date = current_date AND NOT EXISTS (SELECT 1 FROM notification_log nl WHERE nl.org_id = t.org_id AND nl.notification_type = 'L4_dzero' AND nl.sent_at >= current_date) ORDER BY t.amount DESC LIMIT 3",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [920, 0],
+      "id": "20000033-0000-0000-0000-000000000033",
+      "name": "SQL Status Vencimento",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {
+        "jsCode": "const itens = $input.all();\nconst orgData = $('Loop Orgs L4').item.json;\nconst chatwoot_conversation_id = orgData.chatwoot_conversation_id;\n\nif (!chatwoot_conversation_id || !itens.length || !itens[0].json.id) return [];\n\nconst fmt = (n) => new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2}).format(n || 0);\nconst primeiro = itens[0].json;\n\nlet mensagem;\nif (itens.length === 1) {\n  mensagem = `🩵 Antes de fechar o dia, me ajuda com isso?\\n\\n⏱️ *R$ ${fmt(primeiro.amount)}* — ${primeiro.supplier_name} *vencia hoje*.\\n\\nVocê pagou? Rolou pra outro dia? Me avisa que eu atualizo o status aqui ✅`;\n} else {\n  const total = itens.reduce((acc, i) => acc + parseFloat(i.json.amount || 0), 0);\n  const linhas = itens.map(i => `   • R$ ${fmt(i.json.amount)} — ${i.json.supplier_name}`).join('\\n');\n  mensagem = `🩵 Antes de fechar o dia, dá uma olhada?\\n\\n⏱️ *${itens.length} contas venciam hoje* — *R$ ${fmt(total)}*:\\n\\n${linhas}\\n\\nQuais já foram pagas? Me avisa pra eu atualizar ✅`;\n}\n\nreturn [{json: {\n  mensagem,\n  org_id: orgData.org_id,\n  chatwoot_conversation_id,\n  notification_type: 'L4_dzero',\n  transaction_id: primeiro.id\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 0],
+      "id": "20000034-0000-0000-0000-000000000034",
+      "name": "Formatar L4"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://72.60.143.202:3000/api/v1/accounts/4/conversations/{{ $json.chatwoot_conversation_id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {"parameters": [{"name": "content", "value": "={{ $json.mensagem }}"}, {"name": "message_type", "value": "outgoing"}]},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 0],
+      "id": "20000035-0000-0000-0000-000000000035",
+      "name": "Chatwoot L4",
+      "credentials": {"httpHeaderAuth": {"id": "Kv3nULYLwRHJALhg", "name": "ChatWoot - Lucraí"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notification_log (org_id, notification_type, transaction_id) VALUES ('{{ $('Formatar L4').item.json.org_id }}', 'L4_dzero', '{{ $('Formatar L4').item.json.transaction_id }}')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1520, 0],
+      "id": "20000036-0000-0000-0000-000000000036",
+      "name": "Log L4",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.org_id, p.phone_number, p.chatwoot_conversation_id FROM phone_to_org p LEFT JOIN organizations o ON o.id = p.org_id WHERE p.status NOT IN ('cancelled', 'suspended') AND p.phone_number IS NOT NULL AND p.chatwoot_conversation_id IS NOT NULL AND COALESCE((o.lu_proactive_config->>'R1_morning')::boolean, true) = true AND COALESCE((o.lu_proactive_config->>'R1_hora')::int, 8) = {{ $json.hora }} AND NOT EXISTS (SELECT 1 FROM notification_log nl WHERE nl.org_id = p.org_id AND nl.notification_type = 'R1_morning' AND nl.sent_at >= current_date)",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [500, 600],
+      "id": "20000041-0000-0000-0000-000000000041",
+      "name": "Buscar Orgs R1",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {"batchSize": 1, "options": {}},
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, 600],
+      "id": "20000042-0000-0000-0000-000000000042",
+      "name": "Loop Orgs R1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH ontem AS (SELECT SUM(CASE WHEN type='INCOME' THEN amount ELSE 0 END) as receita, SUM(CASE WHEN type='EXPENSE' THEN amount ELSE 0 END) as despesa, COUNT(*) as lancamentos FROM transactions WHERE org_id = '{{ $('Loop Orgs R1').item.json.org_id }}' AND date = current_date - 1), hoje AS (SELECT COUNT(*) as vencimentos, COALESCE(SUM(amount), 0) as total FROM transactions WHERE org_id = '{{ $('Loop Orgs R1').item.json.org_id }}' AND type = 'EXPENSE' AND status = 'PENDING' AND date = current_date) SELECT o.receita as receita_ontem, o.despesa as despesa_ontem, o.lancamentos as lancamentos_ontem, h.vencimentos as vencimentos_hoje, h.total as total_vencendo_hoje FROM ontem o, hoje h",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [920, 600],
+      "id": "20000043-0000-0000-0000-000000000043",
+      "name": "SQL Bom Dia",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {
+        "jsCode": "const itens = $input.all();\nconst orgData = $('Loop Orgs R1').item.json;\nconst chatwoot_conversation_id = orgData.chatwoot_conversation_id;\n\nif (!chatwoot_conversation_id || !itens.length) return [];\n\nconst fmt = (n) => new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2}).format(n || 0);\nconst item = itens[0].json;\nconst lancOntem = Number(item.lancamentos_ontem || 0);\nconst vencHoje = Number(item.vencimentos_hoje || 0);\n\nconst blocoOntem = `📊 *Ontem*\\n   💚 +R$ ${fmt(item.receita_ontem)}\\n   💸 −R$ ${fmt(item.despesa_ontem)}\\n   📝 ${lancOntem} ${lancOntem === 1 ? 'lançamento' : 'lançamentos'}`;\n\nconst blocoHoje = vencHoje > 0\n  ? `📅 *Hoje*\\n   ${vencHoje} ${vencHoje === 1 ? 'conta vence' : 'contas vencem'}, somando *R$ ${fmt(item.total_vencendo_hoje)}*`\n  : `📅 *Hoje*\\n   Nenhuma conta vencendo. Dia tranquilo 🌤️`;\n\nconst mensagem = `🩵 Bom dia! ☀️\\n\\n${blocoOntem}\\n\\n${blocoHoje}\\n\\nBora! 💪`;\n\nreturn [{json: {\n  mensagem,\n  org_id: orgData.org_id,\n  chatwoot_conversation_id,\n  notification_type: 'R1_morning'\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 600],
+      "id": "20000044-0000-0000-0000-000000000044",
+      "name": "Formatar R1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://72.60.143.202:3000/api/v1/accounts/4/conversations/{{ $json.chatwoot_conversation_id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {"parameters": [{"name": "content", "value": "={{ $json.mensagem }}"}, {"name": "message_type", "value": "outgoing"}]},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 600],
+      "id": "20000045-0000-0000-0000-000000000045",
+      "name": "Chatwoot R1",
+      "credentials": {"httpHeaderAuth": {"id": "Kv3nULYLwRHJALhg", "name": "ChatWoot - Lucraí"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notification_log (org_id, notification_type) VALUES ('{{ $('Formatar R1').item.json.org_id }}', 'R1_morning')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1520, 600],
+      "id": "20000046-0000-0000-0000-000000000046",
+      "name": "Log R1",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.org_id, p.phone_number, p.chatwoot_conversation_id FROM phone_to_org p LEFT JOIN organizations o ON o.id = p.org_id WHERE p.status NOT IN ('cancelled', 'suspended') AND p.phone_number IS NOT NULL AND p.chatwoot_conversation_id IS NOT NULL AND COALESCE((o.lu_proactive_config->>'R2_weekly')::boolean, true) = true AND NOT EXISTS (SELECT 1 FROM notification_log nl WHERE nl.org_id = p.org_id AND nl.notification_type = 'R2_weekly' AND nl.sent_at >= date_trunc('week', current_date))",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [500, 1200],
+      "id": "20000051-0000-0000-0000-000000000051",
+      "name": "Buscar Orgs R2",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {"batchSize": 1, "options": {}},
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, 1200],
+      "id": "20000052-0000-0000-0000-000000000052",
+      "name": "Loop Orgs R2"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH semana AS (SELECT SUM(CASE WHEN type='INCOME' THEN amount ELSE 0 END) as receita, SUM(CASE WHEN type='EXPENSE' THEN amount ELSE 0 END) as despesa FROM transactions WHERE org_id = '{{ $('Loop Orgs R2').item.json.org_id }}' AND date >= date_trunc('week', current_date) - 7 AND date < date_trunc('week', current_date)), semana_ant AS (SELECT SUM(CASE WHEN type='INCOME' THEN amount ELSE 0 END) as receita, SUM(CASE WHEN type='EXPENSE' THEN amount ELSE 0 END) as despesa FROM transactions WHERE org_id = '{{ $('Loop Orgs R2').item.json.org_id }}' AND date >= date_trunc('week', current_date) - 14 AND date < date_trunc('week', current_date) - 7), top3 AS (SELECT COALESCE(s.name, t.description) as nome, SUM(t.amount) as total FROM transactions t LEFT JOIN suppliers s ON s.id = t.supplier_id WHERE t.org_id = '{{ $('Loop Orgs R2').item.json.org_id }}' AND t.type = 'EXPENSE' AND t.date >= date_trunc('week', current_date) - 7 AND t.date < date_trunc('week', current_date) GROUP BY nome ORDER BY total DESC LIMIT 3) SELECT s.receita, s.despesa, s.receita - s.despesa as saldo, sa.receita as receita_anterior, sa.despesa as despesa_anterior, (SELECT json_agg(json_build_object('nome', nome, 'total', total)) FROM top3) as top3 FROM semana s, semana_ant sa",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [920, 1200],
+      "id": "20000053-0000-0000-0000-000000000053",
+      "name": "SQL Review Semanal",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {
+        "jsCode": "const itens = $input.all();\nconst orgData = $('Loop Orgs R2').item.json;\nconst chatwoot_conversation_id = orgData.chatwoot_conversation_id;\n\nif (!chatwoot_conversation_id || !itens.length) return [];\n\nconst fmt = (n) => new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2}).format(n || 0);\nconst pct = (a, b) => { if (!b || Number(b) === 0) return 'N/A'; const d = Math.round((Number(a) - Number(b)) / Number(b) * 100); return `${d > 0 ? '+' : ''}${d}%`; };\nconst item = itens[0].json;\n\nconst top3 = typeof item.top3 === 'string' ? JSON.parse(item.top3) : (item.top3 || []);\nconst top3Linhas = top3.length\n  ? top3.map((t, i) => `   ${i+1}. ${t.nome} — R$ ${fmt(t.total)}`).join('\\n')\n  : '   (sem despesas registradas)';\n\nconst saldoEmoji = Number(item.saldo) >= 0 ? '💰' : '⚠️';\n\nconst mensagem = `🩵 Sexta chegou! Bora fechar a semana 📊\\n\\n*Esta semana*\\n💚 Receita: *R$ ${fmt(item.receita)}* (${pct(item.receita, item.receita_anterior)} vs sem. anterior)\\n💸 Despesa: *R$ ${fmt(item.despesa)}* (${pct(item.despesa, item.despesa_anterior)})\\n${saldoEmoji} Saldo: *R$ ${fmt(item.saldo)}*\\n\\n🥇 *Top 3 fornecedores*\\n${top3Linhas}\\n\\nBom fim de semana! 🍻`;\n\nreturn [{json: {\n  mensagem,\n  org_id: orgData.org_id,\n  chatwoot_conversation_id,\n  notification_type: 'R2_weekly'\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 1200],
+      "id": "20000054-0000-0000-0000-000000000054",
+      "name": "Formatar R2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://72.60.143.202:3000/api/v1/accounts/4/conversations/{{ $json.chatwoot_conversation_id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {"parameters": [{"name": "content", "value": "={{ $json.mensagem }}"}, {"name": "message_type", "value": "outgoing"}]},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 1200],
+      "id": "20000055-0000-0000-0000-000000000055",
+      "name": "Chatwoot R2",
+      "credentials": {"httpHeaderAuth": {"id": "Kv3nULYLwRHJALhg", "name": "ChatWoot - Lucraí"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notification_log (org_id, notification_type) VALUES ('{{ $('Formatar R2').item.json.org_id }}', 'R2_weekly')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1520, 1200],
+      "id": "20000056-0000-0000-0000-000000000056",
+      "name": "Log R2",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.org_id, p.phone_number, p.chatwoot_conversation_id FROM phone_to_org p LEFT JOIN organizations o ON o.id = p.org_id WHERE p.status NOT IN ('cancelled', 'suspended') AND p.phone_number IS NOT NULL AND p.chatwoot_conversation_id IS NOT NULL AND COALESCE((o.lu_proactive_config->>'R3_monthly')::boolean, true) = true AND NOT EXISTS (SELECT 1 FROM notification_log nl WHERE nl.org_id = p.org_id AND nl.notification_type = 'R3_monthly' AND date_trunc('month', nl.sent_at) = date_trunc('month', current_date))",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [500, 1800],
+      "id": "20000061-0000-0000-0000-000000000061",
+      "name": "Buscar Orgs R3",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {"batchSize": 1, "options": {}},
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [720, 1800],
+      "id": "20000062-0000-0000-0000-000000000062",
+      "name": "Loop Orgs R3"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH mes_atual AS (SELECT SUM(CASE WHEN type='INCOME' THEN amount ELSE 0 END) as receita, SUM(CASE WHEN type='EXPENSE' THEN amount ELSE 0 END) as despesa FROM transactions WHERE org_id = '{{ $('Loop Orgs R3').item.json.org_id }}' AND date >= date_trunc('month', current_date) - interval '1 month' AND date < date_trunc('month', current_date)), mes_anterior AS (SELECT SUM(CASE WHEN type='INCOME' THEN amount ELSE 0 END) as receita, SUM(CASE WHEN type='EXPENSE' THEN amount ELSE 0 END) as despesa FROM transactions WHERE org_id = '{{ $('Loop Orgs R3').item.json.org_id }}' AND date >= date_trunc('month', current_date) - interval '2 months' AND date < date_trunc('month', current_date) - interval '1 month'), maior_fornecedor AS (SELECT COALESCE(s.name, t.description) as nome, SUM(t.amount) as total FROM transactions t LEFT JOIN suppliers s ON s.id = t.supplier_id WHERE t.org_id = '{{ $('Loop Orgs R3').item.json.org_id }}' AND t.type='EXPENSE' AND t.date >= date_trunc('month', current_date) - interval '1 month' AND t.date < date_trunc('month', current_date) GROUP BY nome ORDER BY total DESC LIMIT 1), maior_cliente AS (SELECT COALESCE(c.name, t.description) as nome, SUM(t.amount) as total FROM transactions t LEFT JOIN customers c ON c.id = t.customer_id WHERE t.org_id = '{{ $('Loop Orgs R3').item.json.org_id }}' AND t.type='INCOME' AND t.date >= date_trunc('month', current_date) - interval '1 month' AND t.date < date_trunc('month', current_date) GROUP BY nome ORDER BY total DESC LIMIT 1) SELECT ma.receita, ma.despesa, ma.receita - ma.despesa as margem, ROUND(((ma.receita - ma.despesa) / NULLIF(ma.receita, 0) * 100)::numeric, 1) as margem_pct, mant.receita as receita_anterior, mant.despesa as despesa_anterior, mf.nome as maior_fornecedor_nome, mf.total as maior_fornecedor_total, mc.nome as maior_cliente_nome, mc.total as maior_cliente_total, TO_CHAR(date_trunc('month', current_date) - interval '1 month', 'TMMonth') as mes_nome FROM mes_atual ma, mes_anterior mant, LATERAL (SELECT * FROM maior_fornecedor) mf, LATERAL (SELECT * FROM maior_cliente) mc",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [920, 1800],
+      "id": "20000063-0000-0000-0000-000000000063",
+      "name": "SQL Fechamento Mensal",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+    {
+      "parameters": {
+        "jsCode": "const itens = $input.all();\nconst orgData = $('Loop Orgs R3').item.json;\nconst chatwoot_conversation_id = orgData.chatwoot_conversation_id;\n\nif (!chatwoot_conversation_id || !itens.length) return [];\n\nconst fmt = (n) => new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2}).format(n || 0);\nconst pct = (a, b) => { if (!b || Number(b) === 0) return 'N/A'; const d = Math.round((Number(a) - Number(b)) / Number(b) * 100); return `${d > 0 ? '+' : ''}${d}%`; };\nconst item = itens[0].json;\n\nconst meses = {January:'Janeiro',February:'Fevereiro',March:'Março',April:'Abril',May:'Maio',June:'Junho',July:'Julho',August:'Agosto',September:'Setembro',October:'Outubro',November:'Novembro',December:'Dezembro'};\nconst mesFormatado = (meses[(item.mes_nome || '').trim()] || item.mes_nome || '').trim();\nconst ganhouEficiencia = Number(item.receita) > Number(item.receita_anterior) && Number(item.despesa) <= Number(item.despesa_anterior);\nconst eficienciaLinha = ganhouEficiencia ? '\\n\\n✨ Mais receita e menos despesa — você ganhou eficiência! 👏' : '';\n\nconst mensagem = `🩵 Mês fechado! Aqui o resumo de *${mesFormatado}* 🎯\\n\\n💚 Faturou *R$ ${fmt(item.receita)}*\\n💸 Gastou *R$ ${fmt(item.despesa)}*\\n💰 Margem *R$ ${fmt(item.margem)}* (*${item.margem_pct}%*)\\n\\n🏆 *Destaques do mês*\\n🥇 Maior cliente: ${item.maior_cliente_nome} (R$ ${fmt(item.maior_cliente_total)})\\n🥈 Maior fornecedor: ${item.maior_fornecedor_nome} (R$ ${fmt(item.maior_fornecedor_total)})\\n\\n📈 *vs. mês anterior*\\nReceita: ${pct(item.receita, item.receita_anterior)}\\nDespesa: ${pct(item.despesa, item.despesa_anterior)}${eficienciaLinha}\\n\\nBora pra mais um mês! 💪`;\n\nreturn [{json: {\n  mensagem,\n  org_id: orgData.org_id,\n  chatwoot_conversation_id,\n  notification_type: 'R3_monthly'\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1120, 1800],
+      "id": "20000064-0000-0000-0000-000000000064",
+      "name": "Formatar R3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=http://72.60.143.202:3000/api/v1/accounts/4/conversations/{{ $json.chatwoot_conversation_id }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {"parameters": [{"name": "content", "value": "={{ $json.mensagem }}"}, {"name": "message_type", "value": "outgoing"}]},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1320, 1800],
+      "id": "20000065-0000-0000-0000-000000000065",
+      "name": "Chatwoot R3",
+      "credentials": {"httpHeaderAuth": {"id": "Kv3nULYLwRHJALhg", "name": "ChatWoot - Lucraí"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO notification_log (org_id, notification_type) VALUES ('{{ $('Formatar R3').item.json.org_id }}', 'R3_monthly')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1520, 1800],
+      "id": "20000066-0000-0000-0000-000000000066",
+      "name": "Log R3",
+      "credentials": {"postgres": {"id": "LsDwmDD5dQo4xD48", "name": "Postgres account"}}
+    },
+
+    {
+      "parameters": {
+        "content": "## Lu Scheduler — Notificações Proativas V2\n\n**Fluxo:** Agendador → detecta tipo ativo → Switch → por org: SQL direto + formata + envia + log\n\n**Tipos:**\n- **L1** segunda 8h — Contas a pagar da semana\n- **L2** diário 18h — D-1 vencimento\n- **L3** diário 9h — Recorrência detectada (pg_trgm)\n- **L4** diário 19h — Status pós-vencimento\n- **R1** diário 8h (default ON, hora configurável via `R1_hora`) — Bom dia financeiro\n- **R2** sexta 17h — Review semanal\n- **R3** dia 1 do mês 8h — Fechamento mensal\n\n**V2 — Sem busca no Chatwoot:**\n- `chatwoot_conversation_id` salvo em `phone_to_org`\n- 14 nós HTTP removidos (Buscar Contato + Buscar Conversa × 7)\n- Fluxo: SQL Orgs → Loop → SQL financeiro → Formatar → Enviar → Log\n\n**Pré-requisitos:**\n- `ALTER TABLE phone_to_org ADD COLUMN chatwoot_conversation_id INTEGER`\n- Rodar workflow de migração one-time para popular a coluna\n- Tabela `notification_log` criada\n- `suppliers.notify_recurrence boolean DEFAULT true`\n- `organizations.lu_proactive_config jsonb`\n- `CREATE EXTENSION IF NOT EXISTS pg_trgm` (L3)\n- Credential `Lucraí_Chatwoot` (httpHeaderAuth)\n\n**Fix locale (correção):** SQL `Hora Atual SP` agora usa `EXTRACT(DOW)` numérico (0=dom..6=sab), independente de locale do banco. Antes comparava string PT-BR contra retorno EN do `TMday` — L1 e R2 nunca disparavam.\n\n**Modo Teste (controlado por flag no JS):**\n- `FORCAR_TESTE = false` (atual) — produção, regras normais de hora/dow/dia.\n- Para testar manualmente: trocar `FORCAR_TESTE = true` e ajustar `TIPO_TESTE_MANUAL` no topo de `Calcular Tipos Ativos`. Salvar e clicar Execute Workflow.\n- Tipos válidos: L1_weekly, L2_dminus1, L3_recurrence, L4_dzero, R1_morning, R2_weekly, R3_monthly.\n- Voltar para `false` antes de deixar o cron rodar em produção.\n- Gates de `notification_log` continuam valendo em ambos os modos (não duplica envio).\n\n**Mensagens (UX melhorada):**\n- Tradução PT-BR para dias da semana e meses (não depende mais de locale do banco).\n- L1 agrupa transações por data e marca \"Hoje\"/\"Amanhã\".\n- WhatsApp markdown (`*negrito*`) para destacar valores e datas.\n- Tom amigável + call-to-action específico em cada mensagem.",
+        "height": 620,
+        "width": 580
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-220, -320],
+      "id": "99999999-0000-0000-0000-000000000001",
+      "name": "Documentação"
+    }
+  ],
+  "connections": {
+    "Agendador": {"main": [[{"node": "Hora Atual SP", "type": "main", "index": 0}]]},
+    "Hora Atual SP": {"main": [[{"node": "Calcular Tipos Ativos", "type": "main", "index": 0}]]},
+    "Calcular Tipos Ativos": {"main": [[{"node": "Switch Tipo Notificação", "type": "main", "index": 0}]]},
+    "Switch Tipo Notificação": {
+      "main": [
+        [{"node": "Buscar Orgs L1", "type": "main", "index": 0}],
+        [{"node": "Buscar Orgs L2", "type": "main", "index": 0}],
+        [{"node": "Buscar Orgs L3", "type": "main", "index": 0}],
+        [{"node": "Buscar Orgs L4", "type": "main", "index": 0}],
+        [{"node": "Buscar Orgs R1", "type": "main", "index": 0}],
+        [{"node": "Buscar Orgs R2", "type": "main", "index": 0}],
+        [{"node": "Buscar Orgs R3", "type": "main", "index": 0}]
+      ]
+    },
+    "Buscar Orgs L1": {"main": [[{"node": "Loop Orgs L1", "type": "main", "index": 0}]]},
+    "Loop Orgs L1": {"main": [[], [{"node": "SQL Contas Semana", "type": "main", "index": 0}]]},
+    "SQL Contas Semana": {"main": [[{"node": "Formatar L1", "type": "main", "index": 0}]]},
+    "Formatar L1": {"main": [[{"node": "Chatwoot L1", "type": "main", "index": 0}]]},
+    "Chatwoot L1": {"main": [[{"node": "Log L1", "type": "main", "index": 0}]]},
+    "Log L1": {"main": [[{"node": "Loop Orgs L1", "type": "main", "index": 0}]]},
+    "Buscar Orgs L2": {"main": [[{"node": "Loop Orgs L2", "type": "main", "index": 0}]]},
+    "Loop Orgs L2": {"main": [[], [{"node": "SQL D-1 Vencimento", "type": "main", "index": 0}]]},
+    "SQL D-1 Vencimento": {"main": [[{"node": "Formatar L2", "type": "main", "index": 0}]]},
+    "Formatar L2": {"main": [[{"node": "Chatwoot L2", "type": "main", "index": 0}]]},
+    "Chatwoot L2": {"main": [[{"node": "Log L2", "type": "main", "index": 0}]]},
+    "Log L2": {"main": [[{"node": "Loop Orgs L2", "type": "main", "index": 0}]]},
+    "Buscar Orgs L3": {"main": [[{"node": "Loop Orgs L3", "type": "main", "index": 0}]]},
+    "Loop Orgs L3": {"main": [[], [{"node": "SQL Recorrência", "type": "main", "index": 0}]]},
+    "SQL Recorrência": {"main": [[{"node": "Formatar L3", "type": "main", "index": 0}]]},
+    "Formatar L3": {"main": [[{"node": "Chatwoot L3", "type": "main", "index": 0}]]},
+    "Chatwoot L3": {"main": [[{"node": "Log L3", "type": "main", "index": 0}]]},
+    "Log L3": {"main": [[{"node": "Loop Orgs L3", "type": "main", "index": 0}]]},
+    "Buscar Orgs L4": {"main": [[{"node": "Loop Orgs L4", "type": "main", "index": 0}]]},
+    "Loop Orgs L4": {"main": [[], [{"node": "SQL Status Vencimento", "type": "main", "index": 0}]]},
+    "SQL Status Vencimento": {"main": [[{"node": "Formatar L4", "type": "main", "index": 0}]]},
+    "Formatar L4": {"main": [[{"node": "Chatwoot L4", "type": "main", "index": 0}]]},
+    "Chatwoot L4": {"main": [[{"node": "Log L4", "type": "main", "index": 0}]]},
+    "Log L4": {"main": [[{"node": "Loop Orgs L4", "type": "main", "index": 0}]]},
+    "Buscar Orgs R1": {"main": [[{"node": "Loop Orgs R1", "type": "main", "index": 0}]]},
+    "Loop Orgs R1": {"main": [[], [{"node": "SQL Bom Dia", "type": "main", "index": 0}]]},
+    "SQL Bom Dia": {"main": [[{"node": "Formatar R1", "type": "main", "index": 0}]]},
+    "Formatar R1": {"main": [[{"node": "Chatwoot R1", "type": "main", "index": 0}]]},
+    "Chatwoot R1": {"main": [[{"node": "Log R1", "type": "main", "index": 0}]]},
+    "Log R1": {"main": [[{"node": "Loop Orgs R1", "type": "main", "index": 0}]]},
+    "Buscar Orgs R2": {"main": [[{"node": "Loop Orgs R2", "type": "main", "index": 0}]]},
+    "Loop Orgs R2": {"main": [[], [{"node": "SQL Review Semanal", "type": "main", "index": 0}]]},
+    "SQL Review Semanal": {"main": [[{"node": "Formatar R2", "type": "main", "index": 0}]]},
+    "Formatar R2": {"main": [[{"node": "Chatwoot R2", "type": "main", "index": 0}]]},
+    "Chatwoot R2": {"main": [[{"node": "Log R2", "type": "main", "index": 0}]]},
+    "Log R2": {"main": [[{"node": "Loop Orgs R2", "type": "main", "index": 0}]]},
+    "Buscar Orgs R3": {"main": [[{"node": "Loop Orgs R3", "type": "main", "index": 0}]]},
+    "Loop Orgs R3": {"main": [[], [{"node": "SQL Fechamento Mensal", "type": "main", "index": 0}]]},
+    "SQL Fechamento Mensal": {"main": [[{"node": "Formatar R3", "type": "main", "index": 0}]]},
+    "Formatar R3": {"main": [[{"node": "Chatwoot R3", "type": "main", "index": 0}]]},
+    "Chatwoot R3": {"main": [[{"node": "Log R3", "type": "main", "index": 0}]]},
+    "Log R3": {"main": [[{"node": "Loop Orgs R3", "type": "main", "index": 0}]]}
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "meta": {
+    "templateId": "lu-proativa-v2",
+    "instanceId": "lucrai"
+  }
+}

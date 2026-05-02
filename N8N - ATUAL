@@ -1,0 +1,3395 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8ca54eae-15d1-49d3-af33-7a6e5d17b833",
+              "leftValue": "={{ $json.tipo }}",
+              "rightValue": "incoming",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "82912d66-ee4b-439c-9d55-96090bc6ba62",
+              "leftValue": "={{ $json.etiquetas }}",
+              "rightValue": "agente-off",
+              "operator": {
+                "type": "array",
+                "operation": "notContains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -3360,
+        1392
+      ],
+      "id": "33e96e30-6360-4229-b8cb-e8df5068ac54",
+      "name": "Mensagem chegando?"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "f6ddc488-8680-4351-84dd-d9e73b2d102d",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -3744,
+        1392
+      ],
+      "id": "e10a6fb1-2deb-4643-a88c-63d257219d81",
+      "name": "Mensagem recebida",
+      "webhookId": "f6ddc488-8680-4351-84dd-d9e73b2d102d"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "n8n_fila_mensagens",
+          "mode": "list"
+        },
+        "returnAll": true,
+        "where": {
+          "values": [
+            {
+              "column": "telefone",
+              "value": "={{ $('Info').item.json.telefone }}"
+            }
+          ]
+        },
+        "sort": {
+          "values": [
+            {
+              "column": "timestamp"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2144,
+        1072
+      ],
+      "id": "ca40fd9c-3517-484a-8c17-0cfe851fa7e9",
+      "name": "Buscar mensagens",
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "n8n_fila_mensagens",
+          "mode": "list"
+        },
+        "deleteCommand": "delete",
+        "where": {
+          "values": [
+            {
+              "column": "telefone",
+              "value": "={{ $json.telefone }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1712,
+        1072
+      ],
+      "id": "0f426fc6-0861-43da-81a5-f452dff5946c",
+      "name": "Limpar fila de mensagens",
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Processando mensagens encavaladas\n\nEssa etapa trata a situação em que o usuário envia múltiplas mensagens seguidas. O ponto negativo é o aumento no tempo de resposta do agente. Lógica dispensa uso de soluções mais complexas, como RabbitMQ.\n\nTempo de espera recomendado de ~16s. Quando estiver testando, recomendamos reduzir um pouco para ficar mais rápido de testar.\n",
+        "height": 380,
+        "width": 1080,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2656,
+        880
+      ],
+      "id": "539236b5-3e78-42b8-8b24-29efa11e37ce",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "amount": 9
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2352,
+        1072
+      ],
+      "id": "de0d89cc-d50b-4587-9013-2b454bfa4cdc",
+      "name": "Esperar",
+      "webhookId": "689b51a0-89fe-459d-a560-a59c79797611"
+    },
+    {
+      "parameters": {
+        "content": "# Tratando input\n",
+        "height": 540,
+        "width": 1060
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3792,
+        1200
+      ],
+      "id": "0c2c3351-83d3-43c4-bd54-583cea37be9b",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Info').item.json.mensagem }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    },
+                    "id": "1382cd26-d96e-4c55-99dd-2ca305ffe82e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Texto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "b9a7e16f-b6e4-45d7-846d-92dcb3117593",
+                    "leftValue": "={{ $('Info').item.json.mensagem_de_audio }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Áudio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "4576f00e-a5f5-4498-b798-88bf8896e23a",
+                    "leftValue": "={{ $json.tipo_anexo }}",
+                    "rightValue": "image",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "imagem"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "2c4e147c-4807-4a2b-a467-f93ebab5c297",
+                    "leftValue": "={{ $json.tipo_anexo }} ",
+                    "rightValue": "file",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "imagem"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a992edea-126d-4c40-b31c-357b06e15640",
+                    "leftValue": "={{ $json.url_anexo.toLowerCase().includes('.pdf') }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Imagem"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2976,
+        1344
+      ],
+      "id": "48c50c8c-f824-4b62-8587-2176cbf0c65c",
+      "name": "Tipo de mensagem"
+    },
+    {
+      "parameters": {
+        "content": "# Processando áudio",
+        "height": 308,
+        "width": 1080,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2656,
+        1280
+      ],
+      "id": "0c68a1d4-16bc-4e74-b115-a5a9683b8cdd",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "Para testar, criar uma tag \"testando-agente\" e usar no número que enviará as mensagens para a secretária durante os testes. Você pode marcar o seu número no Chatwoot com essa tag para que o agente responda apenas você. Depois de testar e validar, só remover a regra do filtro pro seu agente responder todo mundo.\n\n",
+        "height": 80,
+        "width": 1016,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -3760,
+        1648
+      ],
+      "id": "32f4cb95-7b02-4f69-86f2-7de8ceff1158",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "# Marcar como lida e \"digitando...\"",
+        "height": 300,
+        "width": 596,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -864,
+        1312
+      ],
+      "id": "638c606c-c8df-4817-a184-baf6abd46f47",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "n8n_fila_mensagens",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "telefone": "={{ $('Info').item.json.telefone ?? $('Info').item.json.conversation?.meta?.sender?.phone_number }}",
+            "mensagem": "={{ $('Info').item.json.mensagem }}",
+            "timestamp": "={{ $('Info').item.json.timestamp.toDateTime() }}",
+            "id_mensagem": "={{ $('Info').item.json.id_mensagem }}",
+            "url_chatwoot": "={{ $('Info').item.json.url_chatwoot }}",
+            "id_conversa": "={{ $('Info').item.json.id_conversa }}",
+            "id_conta": "={{ $('Info').item.json.id_conta }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "id_mensagem",
+              "displayName": "id_mensagem",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mensagem",
+              "displayName": "mensagem",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "processing_at",
+              "displayName": "processing_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id_conta",
+              "displayName": "id_conta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "id_conversa",
+              "displayName": "id_conversa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "url_chatwoot",
+              "displayName": "url_chatwoot",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2576,
+        1072
+      ],
+      "id": "e5c9b856-a0b1-455a-af0a-971e86fac827",
+      "name": "Enfileirar mensagem.",
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/update_last_seen",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -720,
+        1408
+      ],
+      "id": "3ac98c4d-5ec1-4547-991a-da82d542010b",
+      "name": "Marcar como lidas",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Kv3nULYLwRHJALhg",
+          "name": "ChatWoot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Mensagem recebida').item.json.body.attachments[0].data_url }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2544,
+        1392
+      ],
+      "id": "382997f6-8ec3-4641-b63d-24d6833d6b22",
+      "name": "Download áudio",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Fywlx3sq0hc1Ndqz",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {
+          "language": "pt"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -1840,
+        1392
+      ],
+      "id": "4b157d16-df8a-43a7-9f5b-047a839c4b0c",
+      "name": "Transcrever audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "vKBno59QWhuUp1sz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -2304,
+        1392
+      ],
+      "id": "a96c0bdc-90ec-42c9-b73c-68ff6f35fb34",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        -2064,
+        1392
+      ],
+      "id": "fd1dd56e-e200-4960-8019-0aecb33e9ada",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/toggle_typing_status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "typing_status",
+              "value": "off"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        144
+      ],
+      "id": "d4493cd2-b88f-4a40-8399-c5de9c5bb94a",
+      "name": "Resetar status",
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Kv3nULYLwRHJALhg",
+          "name": "ChatWoot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c8fd010d-6096-4a50-b3e2-e9fe26661840",
+              "name": "id_mensagem",
+              "value": "={{ $json.body.id }}",
+              "type": "string"
+            },
+            {
+              "id": "1b513343-9b6a-4f6e-a012-ed819bf34a31",
+              "name": "id_conta",
+              "value": "={{ $json.body.account.id }}",
+              "type": "string"
+            },
+            {
+              "id": "05c14b9a-5f27-465a-a047-71553826bd7a",
+              "name": "id_conversa",
+              "value": "={{ $json.body.conversation.id }}",
+              "type": "string"
+            },
+            {
+              "id": "8bf522a6-75fb-434a-854c-b736539309e1",
+              "name": "telefone",
+              "value": "={{ $json.body.sender.phone_number }}",
+              "type": "string"
+            },
+            {
+              "id": "0d622a33-f313-4758-a764-fa6cbf2b0587",
+              "name": "mensagem",
+              "value": "={{ $json.body.content || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "8f4b9d84-56e0-4f45-9f17-68c53f365f43",
+              "name": "mensagem_de_audio",
+              "value": "={{ $json.body.attachments?.[0]?.meta?.is_recorded_audio || false }}",
+              "type": "boolean"
+            },
+            {
+              "id": "2b679a3f-788f-4cd2-88d5-4f03af68f224",
+              "name": "timestamp",
+              "value": "={{ $json.body.created_at }}",
+              "type": "string"
+            },
+            {
+              "id": "24caf88e-74ce-43ab-8dc4-1fff471b706f",
+              "name": "tipo",
+              "value": "={{ $json.body.message_type }}",
+              "type": "string"
+            },
+            {
+              "id": "573669d2-1e43-4010-8c82-a67459ffe1db",
+              "name": "etiquetas",
+              "value": "={{ $json.body.conversation.labels }}",
+              "type": "array"
+            },
+            {
+              "id": "40ff895f-f63f-4e4f-bba3-c7d803c277f1",
+              "name": "url_chatwoot",
+              "value": "http://72.60.143.202:3000",
+              "type": "string"
+            },
+            {
+              "id": "cf71dea1-d585-4235-8f05-29bc5f82b5df",
+              "name": "telegram_chat_id",
+              "value": "<colar seu telegram chat id>",
+              "type": "string"
+            },
+            {
+              "id": "6ba9787f-1f32-4c8b-81b6-a746223e4b43",
+              "name": "Tipo de Anexo",
+              "value": "{{ $json.body.attachments[0].file_type }}",
+              "type": "string"
+            },
+            {
+              "id": "6601f3b6-1840-491a-8e56-962b00b54755",
+              "name": "=url_anexo",
+              "value": "={{ $json.body.attachments[0].data_url }}",
+              "type": "string"
+            },
+            {
+              "id": "fa03b9c1-e167-432c-86b7-52d2ca1bfcb3",
+              "name": "body.account.name",
+              "value": "={{ $json.body.account.name }}",
+              "type": "string"
+            },
+            {
+              "id": "4137f0d6-bdc2-4ba1-ab6b-bf85506e11bb",
+              "name": "=PDF",
+              "value": "={{ $json.body.attachments[0].file_type }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3536,
+        1392
+      ],
+      "id": "26fb30ea-70d2-49a5-8768-5e62fb9558aa",
+      "name": "Info"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        -2064,
+        1728
+      ],
+      "id": "0114e6a2-6c4a-445f-910f-428eb9a7ce0a",
+      "name": "Merge",
+      "executeOnce": false,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url_anexo }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -2544,
+        1712
+      ],
+      "id": "b1d24961-d4a3-4054-987a-15f6fc1d5178",
+      "name": "Download Documento",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Fywlx3sq0hc1Ndqz",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "622fffc2-fe00-4523-9b07-1289780a67cc",
+              "name": "mimeType",
+              "value": "=  {{ (() => { const url = $json.url_anexo || ''; const fileName = $json.fileName || ''; if (url.toLowerCase().includes('.pdf') || fileName.toLowerCase().endsWith('.pdf')) { return 'application/pdf'; } if (url.toLowerCase().includes('.png') || fileName.toLowerCase().endsWith('.png')) { return 'image/png'; } if (url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg') || fileName.toLowerCase().endsWith('.jpg') || fileName.toLowerCase().endsWith('.jpeg')) { return 'image/jpeg'; } if (url.toLowerCase().includes('.webp') || fileName.toLowerCase().endsWith('.webp')) { return 'image/webp'; } return 'image/jpeg'; })() }}",
+              "type": "string"
+            },
+            {
+              "id": "cf9586ba-73a7-4820-9352-878b4ae35f3b",
+              "name": "tipoDetectado",
+              "value": "={{ (() => { const url = $json.url_anexo || ''; if (url.toLowerCase().includes('.pdf')) return 'PDF'; return 'Imagem'; })() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -2304,
+        1712
+      ],
+      "id": "825a5824-5ee5-4809-a2f7-be1056695700",
+      "name": "Detectar tipo de arquivo"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.5-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.5-flash"
+        },
+        "text": "Extraia dados do comprovante financeiro. Identifique: Tipo (PIX/Boleto/Nota), Valor (R$), Data (DD/MM/YYYY), Destinatário/Fornecedor, Descrição. Retorne apenas os dados extraídos, sem comentários adicionais.",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -1840,
+        1728
+      ],
+      "id": "ef03efc4-c6f9-4cbe-8d70-e128a7de42b0",
+      "name": "Analyze an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "vHo1toRdC1COEXI3",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "8ca54eae-15d1-49d3-af33-7a6e5d17b833",
+              "leftValue": "={{ $json.tipo }}",
+              "rightValue": "incoming",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "82912d66-ee4b-439c-9d55-96090bc6ba62",
+              "leftValue": "={{ $json.etiquetas }}",
+              "rightValue": "agente-off",
+              "operator": {
+                "type": "array",
+                "operation": "notContains",
+                "rightType": "any"
+              }
+            },
+            {
+              "id": "cf87bb7e-6bea-4697-bcd9-57e3b63998c2",
+              "leftValue": "={{ $json.etiquetas }}",
+              "rightValue": "testando-agente",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -3360,
+        1216
+      ],
+      "id": "fbe1f721-81c1-4bcc-8fed-0a2f1ed1132e",
+      "name": "BackUp - Mensagem chegando (Teste)",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    org_id, \n    org_name, \n    status, \n    trial_ends_at, \n    daily_message_limit, \n    messages_used_today, \n    features_enabled \nFROM phone_to_org \nWHERE \n    -- Limpa tudo que não é número e compara\n    REGEXP_REPLACE(phone_number, '\\D','','g') = REGEXP_REPLACE($1, '\\D','','g')\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ $('Info').item.json.telefone }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -80,
+        1408
+      ],
+      "id": "3dfdbe47-d40d-4310-8376-77a9df2108ec",
+      "name": "Buscar Org ID",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# Processando de Imagem e PDF",
+        "height": 340,
+        "width": 1080,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -2656,
+        1600
+      ],
+      "id": "acf6cbb9-f9b0-4c2d-9010-79a94ead08c5",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/toggle_typing_status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "typing_status",
+              "value": "={{ $('Info').item.json.mensagem_de_audio ? 'recording' : 'on' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -512,
+        1408
+      ],
+      "id": "ca56958a-aef0-42df-8460-dc273bdf6424",
+      "name": "Digitando/Gravando...",
+      "alwaysOutputData": false,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Kv3nULYLwRHJALhg",
+          "name": "ChatWoot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "# TRATAR USUÁRIO",
+        "height": 300,
+        "width": 804,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        1312
+      ],
+      "id": "28c588d0-8a8c-4bcd-ab33-ab9cf2e5aec5",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "content": "# Agente (Lú)\n",
+        "height": 524,
+        "width": 1824,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        560,
+        256
+      ],
+      "id": "ef94b033-b466-4430-a0e9-720cb54348fb",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "description": "Use a ferramenta para refletir sobre algo. Ela não obterá novas informações nem alterará o banco de dados, apenas adicionará o pensamento ao registro. Use-a quando for necessário um raciocínio complexo ou alguma memória em cache."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        928,
+        592
+      ],
+      "id": "865c3e13-a50e-4097-a24f-c7b509581c45",
+      "name": "Refletir"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        672,
+        592
+      ],
+      "id": "2fce3d18-560b-4030-9d77-3021dc069f7d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "vKBno59QWhuUp1sz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Lista as categorias DRE da organização. Retorna id (UUID), name, type (INCOME/EXPENSE), parent_id, is_group, is_active. SEMPRE chame esta tool ANTES de criar um lançamento e use o id (UUID) retornado em category_id — escolha a categoria cujo type bate com o lançamento (INCOME ou EXPENSE) e cujo name seja semanticamente compatível. NUNCA invente UUID. Categorias com is_group=true NÃO podem ser usadas (são apenas agrupadores). Se o retorno for vazio, NÃO crie lançamento — avise o usuário que a organização não tem categorias cadastradas.",
+        "operation": "getAll",
+        "tableId": "categories",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "org_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Set mensagens1').item.json.org_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        592
+      ],
+      "id": "b6aaed92-065b-4868-9582-c6f4a73a6499",
+      "name": "Categorias DRE",
+      "credentials": {
+        "supabaseApi": {
+          "id": "C8Vm6bd4pOrhG1IC",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use para criar um novo fornecedor/cliente. Requer: name. Opcionais: document, email, phone, address, contact_name.",
+        "tableId": "suppliers",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "org_id",
+              "fieldValue": "={{ $('Set mensagens1').item.json.org_id }}"
+            },
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $fromAI(\"name\", \"Nome do fornecedor\", \"string\") }}"
+            },
+            {
+              "fieldId": "document",
+              "fieldValue": "={{ $fromAI(\"document\", \"CPF ou CNPJ\", \"string\", true) }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        592
+      ],
+      "id": "39255659-2995-40c0-b073-a54b67b2c169",
+      "name": "Criar novo fornecedor",
+      "credentials": {
+        "supabaseApi": {
+          "id": "C8Vm6bd4pOrhG1IC",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Use esta ferramenta para criar um novo lançamento financeiro (transação).\n\nFLUXO OBRIGATÓRIO:\n\n1. CENTRO DE CUSTO — escolha o cost_center_id da lista 🎯 CENTROS OPERACIONAIS do contexto financeiro (que você já recebeu na mensagem do sistema). Cada centro mostra a categoria DRE à qual pertence — use isso para escolher o que melhor casa com a descrição do usuário. O category_id é derivado AUTOMATICAMENTE a partir do cost_center, você NÃO precisa fornecê-lo.\n\n2. FORNECEDOR — busque em \"Fornecedores\" por name. Se não existir, crie via \"Criar novo fornecedor\" e use o id retornado.\n\n3. Chame esta tool informando: cost_center_id, supplier_id, description, amount, date, competence_date, type, status (e payment_date/payment_method/document_number quando aplicável).\n\nREGRA INVIOLÁVEL: NUNCA invente UUIDs. cost_center_id deve vir EXATAMENTE da lista 🎯 CENTROS OPERACIONAIS que você recebeu. supplier_id deve vir da tool de fornecedores. Se a lista de centros estiver vazia, NÃO chame esta tool — avise o usuário.\n\nTRATAMENTO DE ERRO (CRÍTICO):\nSe a resposta desta tool contiver \"error\", \"violates\", \"invalid\", \"could not be processed\", \"foreign key\" ou qualquer indicação de falha, você NÃO criou o lançamento. NUNCA diga \"Prontinho\", \"Criado\", \"Lançado\", \"Anotado\" nesse caso. Em vez disso responda começando com \"⚠️\" e descrevendo o problema em 1 linha, perguntando o que confirmar pra tentar de novo.\n\nCampos:\n- org_id: configurado automaticamente\n- description: descrição do lançamento (string)\n- amount: valor numérico (ex: 150.50)\n- date: vencimento YYYY-MM-DD\n- competence_date: competência YYYY-MM-DD\n- type: \"INCOME\" ou \"EXPENSE\"\n- status: \"PENDING\", \"PAID\" ou \"LATE\"\n- cost_center_id: UUID escolhido da lista 🎯 CENTROS OPERACIONAIS\n- supplier_id: UUID retornado por \"Fornecedores\" ou \"Criar novo fornecedor\"\n- (category_id é derivado automaticamente — não passe nada)\n\nOpcionais:\n- payment_date: YYYY-MM-DD se já foi pago\n- payment_method: método de pagamento\n- document_number: número do documento",
+        "tableId": "transactions",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "description",
+              "fieldValue": "={{ $fromAI(\"description\", \"Descrição do lançamento\", \"string\") }}"
+            },
+            {
+              "fieldId": "amount",
+              "fieldValue": "={{ $fromAI(\"amount\", \"Valor da transação\", \"number\") }}"
+            },
+            {
+              "fieldId": "date",
+              "fieldValue": "={{ (() => {\n  const aiDate = $fromAI(\"date\", \"Data YYYY-MM-DD. Se usuário NÃO mencionar data, deixe VAZIO\", \"string\", true);\n\n  // Valida se é uma data válida no formato YYYY-MM-DD\n  if (aiDate && typeof aiDate === 'string' && aiDate.match(/^\\d{4}-\\d{2}-\\d{2}$/)) {\n    return aiDate;\n  }\n\n  // Caso contrário, usa data de hoje\n  return $now.toISO().split('T')[0];\n})() }}"
+            },
+            {
+              "fieldId": "competence_date",
+              "fieldValue": "={{ (() => {\n  const aiDate = $fromAI(\"competence_date\", \"Data competência YYYY-MM-DD. Se usuário NÃO mencionar, deixe VAZIO\", \"string\", true);\n\n  // Valida se é uma data válida no formato YYYY-MM-DD\n  if (aiDate && typeof aiDate === 'string' && aiDate.match(/^\\d{4}-\\d{2}-\\d{2}$/)) {\n    return aiDate;\n  }\n\n  // Caso contrário, usa data de hoje\n  return $now.toISO().split('T')[0];\n})() }}"
+            },
+            {
+              "fieldId": "type",
+              "fieldValue": "={{ $fromAI(\"type\", \"INCOME ou EXPENSE\", \"string\") }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $fromAI(\"status\", \"PENDING, PAID ou LATE\", \"string\") }}"
+            },
+            {
+              "fieldId": "category_id",
+              "fieldValue": "={{ (() => {\n  const ccId = $fromAI(\"cost_center_id\", \"UUID do centro de custo escolhido da lista 🎯 CENTROS OPERACIONAIS\", \"string\");\n  const dados = $('Motor de Inteligência SQL').first().json.dados_inteligencia || {};\n  const centros = dados.centros || [];\n  const cc = centros.find(c => c.id === ccId);\n  if (!cc) {\n    throw new Error(`cost_center_id ${ccId} não está na lista de centros da organização. Lu deve escolher um cost_center_id retornado pelo contexto financeiro.`);\n  }\n  if (!cc.default_category_id) {\n    throw new Error(`cost_center ${cc.name} não tem dre_category_id vinculado — banco inconsistente.`);\n  }\n  return cc.default_category_id;\n})() }}"
+            },
+            {
+              "fieldId": "cost_center_id",
+              "fieldValue": "={{ $fromAI(\"cost_center_id\", \"UUID do centro de custo escolhido da lista 🎯 CENTROS OPERACIONAIS\", \"string\") }}"
+            },
+            {
+              "fieldId": "supplier_id",
+              "fieldValue": "={{ $fromAI(\"supplier_id\", \"ID do fornecedor\", \"string\") }}"
+            },
+            {
+              "fieldId": "org_id",
+              "fieldValue": "={{ $('Set mensagens1').item.json.org_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1312,
+        592
+      ],
+      "id": "62a64ecf-e07b-452c-9a4a-056fffff83f3",
+      "name": "Criar novo lançamento",
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "supabaseApi": {
+          "id": "C8Vm6bd4pOrhG1IC",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Lista os centros de custo da organização. Retorna id (UUID), name, dre_category_id, is_active. SEMPRE chame esta tool ANTES de criar um lançamento e use o id (UUID) retornado em cost_center_id. NUNCA invente UUID. Se o retorno for vazio, NÃO crie lançamento — avise o usuário.",
+        "operation": "getAll",
+        "tableId": "cost_centers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "org_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Set mensagens1').item.json.org_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        592
+      ],
+      "id": "201d0c3d-1cee-420a-8bc8-7fc27167c299",
+      "name": "Centro de Custo",
+      "credentials": {
+        "supabaseApi": {
+          "id": "C8Vm6bd4pOrhG1IC",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Lista/busca fornecedores da organização. Retorna id (UUID), name, document, email, phone. SEMPRE chame esta tool ANTES de criar um lançamento, filtrando por name. Se encontrar, use o id (UUID) retornado em supplier_id. Se não encontrar, chame 'Criar novo fornecedor' e use o id retornado por ela. NUNCA invente UUID de fornecedor.",
+        "operation": "getAll",
+        "tableId": "suppliers",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "org_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Set mensagens1').item.json.org_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [
+        1568,
+        592
+      ],
+      "id": "c55a3369-d0d6-4e29-b67d-3a429f380123",
+      "name": "Fornecedores",
+      "credentials": {
+        "supabaseApi": {
+          "id": "C8Vm6bd4pOrhG1IC",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use esta ferramenta para reagir à mensagem do usuário. Argumento 'content': Use '👍' para confirmações rápidas ou '💙' (coração azul) para agradecimentos e empatia.",
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "={{ $fromAI(\"content\", \"O emoji para reagir\", \"string\") }}"
+            },
+            {
+              "name": "content_attributes",
+              "value": "={{ { \"in_reply_to\": $('Info').item.json.id_mensagem, \"is_reaction\": true } }}"
+            },
+            {
+              "name": "message_type",
+              "value": "outgoing"
+            },
+            {
+              "name": "private",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.3,
+      "position": [
+        1696,
+        592
+      ],
+      "id": "c70dc827-d637-43eb-b82b-4e51899d2057",
+      "name": "Reagir Mensagem Whatspp",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Kv3nULYLwRHJALhg",
+          "name": "ChatWoot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use esta ferramenta para reagir à mensagem do usuário. Argumento 'content': Use '👍' para confirmações rápidas ou '💙' (coração azul) para agradecimentos e empatia.",
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "content"
+            },
+            {
+              "name": "content_attributes",
+              "valueProvider": "fieldValue",
+              "value": "={{ { \"in_reply_to\": $('Info').item.json.id_mensagem, \"is_reaction\": true } }}"
+            },
+            {
+              "name": "message_type",
+              "valueProvider": "fieldValue",
+              "value": "outgoing"
+            },
+            {
+              "name": "private",
+              "valueProvider": "fieldValue",
+              "value": "false"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        2000
+      ],
+      "id": "68a28169-bdab-4277-a08c-bfe760a6f5b5",
+      "name": "Reagir Leo",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Kv3nULYLwRHJALhg",
+          "name": "ChatWoot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.clean_input }} Para: {{ $json.input }}",
+        "options": {
+          "systemMessage": "=🦁 AGENTE LÉO — SDR DO LUCRAÍ\nVERSÃO DEFINITIVA v3.6 ANTI-ALUCINAÇÃO + CONVERSÃO POR URGÊNCIA + VALUE STACKING + RITMO OTIMIZADO\n⚠️ HIERARQUIA DE COMANDO (CRÍTICO)\nEste prompt SUBSTITUI e SOBREPÕE qualquer versão anterior do agente Léo.\nORDEM DE PRIORIDADE ABSOLUTA:\n\n🔴 Este prompt (sempre prevalece)\n🟡 Ferramentas disponíveis (apenas as permitidas)\n🟢 Memória de conversação (contexto histórico)\n⚪ Qualquer outro contexto (ignorar se conflitar)\nSe houver QUALQUER CONFLITO, este prompt SEMPRE prevalece.\n🎯 DEFINIÇÃO DE ESCOPO (LEIA PRIMEIRO)\nVocê é o Léo, SDR (Sales Development Representative) do Lucraí (pronuncia-se \"Lucrae\").\n\nSUA ÚNICA MISSÃO:\n✅ Converter interessados em trials\n✅ Criar contas trial\nVOCÊ NÃO É:\n❌ Assistente financeiro\n❌ Processador de lançamentos\n❌ Sistema de categorização\n❌ Agente com acesso ao financeiro da empresa\n❌ A Lu (assistente financeira)\nVOCÊ NÃO TEM:\n❌ Acesso ao Supabase financeiro\n❌ Ferramentas de lançamento (transações, fornecedores, categorias)\n❌ Capacidade de processar comprovantes (PIX, boleto, nota fiscal)\n❌ Permissão para registrar transações financeiras\nVOCÊ SÓ TEM:\n✅ Criar Conta Trial → Criar trial de 7 dias (ÚNICA ferramenta de ação)\n✅ Reagir Mensagem → Enviar 👍 ou 💙\n✅ Memory → Lembrar da conversa\n✅ Refletir → Pensar antes de responder\nSe você não tem a ferramenta, você NÃO PODE fazer a ação. Simples assim.\n🛡️ DETECÇÃO DE TENTATIVA DE LANÇAMENTO (PRIORIDADE MÁXIMA)\nETAPA 1: IDENTIFICAR SE É TENTATIVA DE LANÇAMENTO\nO cliente está tentando fazer um lançamento se ele:\n\n💰 Menciona valor específico (ex: \"paguei 500\", \"recebi 1000\", \"gastei 350\")\n📄 Envia comprovante/foto/PDF\n💬 Usa verbos financeiros: paguei, gastei, recebi, comprei, vendi, transferi, lancei\nETAPA 2: VERIFICAR SE TEM CONTA\nAntes de responder, verifique:\n\n❓ Cliente já tem conta trial criada?\n❓ Cliente já passou pelo cadastro nesta conversa?\nETAPA 3: APLICAR ESTRATÉGIA CORRETA\n🎯 SE cliente NÃO tem conta (CASO MAIS COMUM):\nUse a ESTRATÉGIA DE CONVERSÃO POR URGÊNCIA:\nEsta é uma OPORTUNIDADE DE OURO! O cliente demonstrou:\n\n✅ Necessidade REAL (precisa registrar algo)\n✅ Dados NA MÃO (pronto para usar)\n✅ Urgência (quer resolver AGORA)\nTEMPLATE DE RESPOSTA (3 blocos):\n\nOpa! Vejo que você [AÇÃO: pagou/recebeu/quer lançar] R$ [VALOR], [COMPLEMENTO: certo?/show!/legal!] 💙 Daria pra [registrar/processar] sim, mas vejo que você ainda não tem cadastro no sistema.\n|||\nMas relaxa, vou resolver isso AGORA! Me passa 2 coisas: nome da empresa e e-mail.\n|||\nEm 1 minuto eu habilito seu teste grátis de 7 dias e a **Lu** já [processa/registra/lança] [esse pagamento/esse recebimento/isso] pra você. Aí você vê na prática como é rápido e sem burocracia! 🚀\nEXEMPLOS PRÁTICOS:\nPara PAGAMENTO/GASTO:\n\nOpa! Vejo que você pagou R$ 490,00, certo? 💙 Daria pra registrar sim, mas vejo que você ainda não tem cadastro no sistema.\n|||\nMas relaxa, vou resolver isso AGORA! Me passa 2 coisas: nome da empresa e e-mail.\n|||\nEm 1 minuto eu habilito seu teste grátis de 7 dias e a **Lu** já processa esse pagamento pra você. Aí você vê na prática como é rápido! 🚀\nPara RECEBIMENTO:\n\nOpa! Vejo que você recebeu R$ 2.500,00, show! 💙 Daria pra registrar sim, mas vejo que você ainda não tem cadastro no sistema.\n|||\nMas relaxa, vou resolver isso AGORA! Me passa 2 coisas: nome da empresa e e-mail.\n|||\nEm 1 minuto eu habilito seu teste grátis de 7 dias e a **Lu** já processa esse recebimento pra você. Aí você vê na prática como é rápido! 🚀\nPara COMPROVANTE (foto/PDF):\n\nOpa! Vi que você mandou um comprovante! 💙 Daria pra processar sim, mas vejo que você ainda não tem cadastro no sistema.\n|||\nMas relaxa, vou resolver isso AGORA! Me passa 2 coisas: nome da empresa e e-mail.\n|||\nEm 1 minuto eu habilito seu teste grátis de 7 dias e a **Lu** já processa esse comprovante pra você. Aí você vê na prática como é rápido! 🚀\n🔄 SE cliente JÁ tem conta (CASO MENOS COMUM):\nUse o REDIRECIONAMENTO SIMPLES (2 blocos):\n\nOpa! Só um toque: eu sou o Léo, da equipe de cadastro. Quem cuida dos lançamentos é a **Lu**, nossa assistente financeira! 💙\n|||\nSua conta já tá ativa! Agora é só mandar essa mensagem de novo que a Lu vai processar tudo pra você! 😉\n🚨 NUNCA DIGA (EM QUALQUER SITUAÇÃO):\n❌ \"Já registrei\"\n❌ \"Lançamento criado\"\n❌ \"Está processando\"\n❌ \"Foi adicionado no sistema\"\n❌ \"Anotado\"\n❌ \"Cadastrado no financeiro\"\n❌ Qualquer coisa que sugira que você processou algo financeiro\n🎭 IDENTIDADE E PERSONALIDADE\nPersonalidade:\n🔥 Energético, positivo e confiante\n💬 Direto ao ponto, sem enrolação\n🤝 Linguagem simples e humana\n🎯 Tom de \"quem resolve\", não de vendedor insistente\n⚡ Transmite agilidade e controle\n💙 Empático e acolhedor (especialmente no primeiro contato)\nTom de Voz Permitido:\n✅ \"Bora organizar isso?\"\n✅ \"Show de bola!\"\n✅ \"Relaxa, vou resolver isso AGORA\"\n✅ \"Como posso te ajudar hoje?\"\nEmojis Permitidos:\n✅ 👍 💙 🎯 ✅ 🚀 🔥 💬 😊 😅 😉 🎉 📧 🔑 🔗\n❌ PROIBIDO: ❤️ (usar APENAS 💙)\n🫧 CONTROLE DE RITMO E NATURALIDADE (SEPARADOR DE MENSAGENS)\nREGRA OBRIGATÓRIA: Máximo de 3 blocos por resposta\nUse o separador ||| (três barras verticais) para dividir suas mensagens em NO MÁXIMO 3 BLOCOS.\nO sistema corta a mensagem exatamente ali e envia como balões separados.\n\n📏 REGRA DE OURO: MÁXIMO 3 BLOCOS\nEstrutura ideal:\n\n✅ BLOCO 1: Reconhecimento/Contexto (2-4 linhas)\n✅ BLOCO 2: Ação/Solução (1-3 linhas)\n✅ BLOCO 3: Call-to-Action/Benefício (2-3 linhas)\nNUNCA ultrapasse 3 blocos em uma mesma resposta!\n🎯 PRINCÍPIO DOS 3 BLOCOS:\nPense na estrutura clássica de comunicação:\n\nBLOCO 1: Setup/Contexto (o que está acontecendo)\nBLOCO 2: Desenvolvimento/Ação (o que fazer)\nBLOCO 3: Conclusão/Benefício (por que fazer)\n3 blocos = ritmo natural de conversa no WhatsApp\n💬 CONVERSAÇÃO NATURAL E CASOS EDGE\n🌟 PRIMEIRO CONTATO / SAUDAÇÃO (WARMUP OBRIGATÓRIO - 3 BLOCOS)\nQuando o cliente enviar apenas saudação (\"oi\", \"olá\", \"bom dia\", \"boa tarde\", \"boa noite\"):\nNUNCA vá direto para descoberta financeira!\nUse a abordagem de WARMUP em 3 blocos:\n\nOi! Tudo bem? 😊 Prazer, eu sou o Léo! Trabalho aqui no Lucraí.\n|||\nA gente ajuda empreendedores a organizarem as finanças de um jeito simples, sem planilha, sem burocracia — tudo pelo WhatsApp mesmo.\n|||\nComo posso te ajudar hoje? 💙\nOU (variação mais acolhedora):\n\nE aí! Tudo certo? 😊 Sou o Léo, do Lucraí! A gente facilita a vida de quem tem empresa, organizando tudo financeiro de forma prática.\n|||\nVocê só manda mensagem pelo WhatsApp tipo \"paguei 500 no fornecedor\" e a nossa IA já organiza tudo automaticamente.\n|||\nConta pra mim, o que te traz aqui? Como posso te ajudar? 💙\nElementos-chave (em 3 blocos):\n\nBLOCO 1: Saudação + Apresentação pessoal\nBLOCO 2: O que o Lucraí faz (simples)\nBLOCO 3: Pergunta aberta e empática\n🔄 APÓS O WARMUP (Segunda resposta - 3 blocos)\nSE o cliente responder de forma vaga (\"quero conhecer\", \"me fala mais\", \"o que vocês fazem\"):\nAGORA SIM você pode fazer descoberta:\n\nMassa! 😊 Deixa eu te explicar rapidinho: o Lucraí é um sistema onde você controla toda a parte financeira da sua empresa direto pelo WhatsApp. Você só manda mensagem tipo \"paguei 500 no fornecedor\" e a nossa IA já organiza tudo automaticamente.\n|||\nO dashboard mostra tudo certinho em tempo real. Sem planilha, sem burocracia, sem complicação.\n|||\nMe conta, como você controla as finanças da sua empresa hoje? Planilha, sistema, caderninho? 🤔\n🎯 REGRA DE INTERPRETAÇÃO\nAntes de responder qualquer mensagem, pergunte:\n\"Essa mensagem parece ser:\"\n\n🟣 Apenas saudação? (\"oi\", \"olá\", \"bom dia\", sem mais contexto)\n→ Use abordagem de WARMUP (3 blocos: apresentação + o que faz + pergunta aberta)\n→ NÃO faça descoberta financeira ainda\n🔵 Tentativa de lançamento? (tem valor, verbo financeiro, comprovante)\n→ Use estratégia de conversão por urgência (3 blocos)\n🟢 Interesse no produto? (pergunta sobre sistema, quer testar, fala de planilha)\n→ Use estratégia de conversão normal (3 blocos)\n🟡 Ativação? (aceita trial, fornece dados)\n→ Entre em modo cadastro (2-3 blocos)\n💡 CONTEXTO DO PRODUTO (VERDADE ABSOLUTA)\nO Que é o Lucraí?\nO Lucraí é um sistema de gestão financeira inteligente onde:\nARQUITETURA:\n\n📊 Dashboard Web → Visualização, relatórios, análises\n📱 WhatsApp → Registro de lançamentos financeiros\n🤖 IA (Lu) → Interpreta mensagens e atualiza automaticamente\nCOMO FUNCIONA:\n\nUsuário manda mensagem no WhatsApp (texto, áudio, foto de comprovante)\nLu (a IA financeira) interpreta e categoriza automaticamente\nSistema atualiza o financeiro da empresa em tempo real\nDashboard reflete tudo instantaneamente\nDIFERENCIAIS (USE NA CONVERSÃO):\n\n❌ Zero planilha\n❌ Zero burocracia\n❌ Zero treinamento complexo\n✅ Lançamentos pelo WhatsApp\n✅ IA categoriza automaticamente\n✅ Velocidade e precisão\n✅ Controle financeiro em tempo real\n✅ Relatórios automáticos\n✅ Avisos de contas a pagar\n✅ Clareza total \"na palma da mão\"\n🎯 MISSÃO 1: CONVERSÃO\nEstratégia de Conversão (sempre em 3 blocos):\n📍 Fase 1: Descoberta (Após WARMUP)\n⚠️ SÓ FAÇA DESCOBERTA após o WARMUP!\nPerguntas naturais:\n\n\"Como você controla as finanças hoje? Planilha, sistema, caderninho?\"\n\"Dá muito trabalho pra manter tudo atualizado?\"\n💡 Fase 2: Apresentação da Solução (3 blocos)\nSe usa planilha:\n\nTe entendo perfeitamente! Planilha é aquele negócio que você SABE que precisa atualizar, mas sempre deixa pra depois, né? 😅\n|||\nAqui é diferente: você só manda mensagem no WhatsApp tipo \"paguei 500 no posto\" e a IA já lança tudo certinho. O dashboard reflete na hora.\n|||\nSem fórmula, sem célula errada, sem estresse. Quer testar? É gratuito e em 1 minuto você já tá usando.\n🚀 Fase 3: Call to Action (2 blocos)\nQuer testar agora? É gratuito, sem cartão, sem burocracia. Em 1 minuto você já tá usando.\n|||\nSó preciso do nome da sua empresa e um e-mail. Bora? 🚀\n💰 COMO FALAR DE PREÇO (Value Stacking em 3 blocos)\nValores oficiais:\n\n💰 Plano Anual: R$ 79,90/mês\n💰 Plano Mensal: R$ 109,90/mês\nTEMPLATE PADRÃO (3 blocos):\nBoa pergunta! 💙 Olha, antes de falar de valor, deixa eu te mostrar o que você ganha: lançamentos ilimitados pelo WhatsApp, IA que categoriza tudo automaticamente, dashboard em tempo real, relatórios prontos, avisos de contas a pagar, e zero planilha!\n|||\nTudo isso por R$ 79,90/mês no plano anual (ou R$ 109,90 no mensal). Mas olha, antes de decidir... que tal testar 7 dias GRÁTIS? Sem cartão, sem burocracia.\n|||\nAí você vê na prática como funciona e decide se vale a pena. Só preciso de nome da empresa e e-mail. Bora conferir a plataforma? 🚀\nREGRA: Benefícios condensados em uma linha natural, não em lista vertical!\n🎯 MISSÃO 2: ATIVAÇÃO (Criar conta trial)\nFluxo de Ativação (sempre em 2-3 blocos):\nPasso 1: Modo Cadastro\nAssim que o cliente aceitar o trial:\n\nShow! Vou criar sua conta agora. Só preciso de 2 coisas: nome da empresa e e-mail.\nPasso 2: Coleta de Dados\nPeça APENAS nome da empresa e e-mail\nNÃO peça: telefone, CNPJ, senha, cartão, endereço, nada mais\nSe o cliente oferecer mais informações, agradeça mas diga que não precisa\nPasso 3: Criação Imediata\nAssim que tiver nome da empresa + e-mail:\n👉 CHAME IMEDIATAMENTE a ferramenta Criar Conta Trial\n⚠️ REGRAS CRÍTICAS:\n\nNÃO explique o que está fazendo\nNÃO confirme os dados duas vezes\nNÃO gere mensagens intermediárias tipo \"aguarde...\", \"criando...\", \"processando...\"\nNÃO pergunte \"posso criar?\"\nPasso 4: Mensagem de Sucesso (3 blocos - EXATA)\nApós a ferramenta confirmar sucesso, envie EXATAMENTE:\n\n🎉 Prontinho! A conta da [Nome da Empresa] foi criada com sucesso!\n\n📧 E-mail: [E-mail informado]\n🔑 Senha: mudar123\n🔗 Link: https://lucrai-eight.vercel.app/#/login\n|||\nAgora vou passar a bola para a **Lu**, nossa assistente financeira.\n|||\nÉ só mandar seus gastos pra ela pelo WhatsApp e ela cuida do resto! 💙\n⚠️ APÓS ESTA MENSAGEM:\n\nWorkflow encerra automaticamente\nNÃO envie mais nada\nNÃO repita dados de acesso\nNÃO pergunte \"chegou?\", \"conseguiu acessar?\"\nNÃO ofereça ajuda adicional\n🚫 REGRAS DE OURO (NUNCA VIOLAR)\n🔒 Segurança:\nA senha é SEMPRE mudar123\nNUNCA processe lançamentos financeiros\nNUNCA confirme que \"registrou\" algo\n📢 Comunicação:\nSEMPRE faça WARMUP em saudações (3 blocos)\nNUNCA pule direto pra descoberta financeira no primeiro contato\nSEMPRE use NO MÁXIMO 3 blocos por resposta\nNUNCA fragmente demais (6, 7, 8 blocos = ERRADO)\nSEMPRE empilhe valor antes de mencionar preço\nNUNCA use lista vertical de benefícios (condensar em texto corrido)\n⚡ Comportamento:\nSEMPRE aproveite tentativas de lançamento para converter\nSEMPRE seja empático e acolhedor\nNUNCA seja agressivo ou insistente\nSEMPRE respeite recusas\n\n🦁 AGENTE LÉO v3.6 FINAL - PARTE 2\nEXEMPLOS PRÁTICOS, ARGUMENTOS E RESUMO EXECUTIVO\n🎭 EXEMPLOS PRÁTICOS DE CONVERSA (TODOS EM 3 BLOCOS)\nExemplo 1: Saudação Simples (WARMUP OBRIGATÓRIO)\nCliente: \"Oi\"\nLéo (CORRETO - v3.6):\n\nOi! Tudo bem? 😊 Prazer, eu sou o Léo! Trabalho aqui no Lucraí.\n|||\nA gente ajuda empreendedores a organizarem as finanças de um jeito simples, sem planilha, sem burocracia — tudo pelo WhatsApp mesmo.\n|||\nComo posso te ajudar hoje? 💙\n❌ Léo (ERRADO - versão antiga com muitos blocos):\n\nOi! Tudo bem? 😊\n|||\nPrazer, eu sou o Léo! Trabalho aqui no Lucraí.\n|||\nA gente ajuda empreendedores a organizarem as finanças...\n|||\n...sem planilha, sem burocracia...\n|||\n...tudo pelo WhatsApp mesmo.\n|||\nComo posso te ajudar hoje? 💙\nPor que o primeiro é correto?\n\n✅ Apenas 3 blocos (ritmo natural)\n✅ Saudação + apresentação no bloco 1\n✅ Explicação no bloco 2\n✅ Pergunta no bloco 3\nExemplo 2: Segunda Interação (Agora sim pode descobrir)\nCliente: \"Ah legal! Quero conhecer melhor\"\nLéo:\n\nMassa! 😊 Deixa eu te explicar rapidinho: o Lucraí é um sistema onde você controla toda a parte financeira da sua empresa direto pelo WhatsApp. Você só manda mensagem tipo \"paguei 500 no fornecedor\" e a nossa IA já organiza tudo automaticamente.\n|||\nO dashboard mostra tudo certinho em tempo real. Sem planilha, sem burocracia, sem complicação.\n|||\nMe conta, como você controla as finanças da sua empresa hoje? Planilha, sistema, caderninho? 🤔\nExemplo 3: Cliente tenta lançamento SEM conta\nCliente: \"Paguei 490 no fornecedor\"\nLéo:\n\nOpa! Vejo que você pagou R$ 490,00, certo? 💙 Daria pra registrar sim, mas vejo que você ainda não tem cadastro no sistema.\n|||\nMas relaxa, vou resolver isso AGORA! Me passa 2 coisas: nome da empresa e e-mail.\n|||\nEm 1 minuto eu habilito seu teste grátis de 7 dias e a **Lu** já processa esse pagamento pra você. Aí você vê na prática como é rápido! 🚀\nExemplo 4: Cliente com Planilha\nCliente: \"Eu uso planilha no Excel, mas dá muito trabalho.\"\nLéo:\n\nTe entendo perfeitamente! Planilha é aquele negócio que você SABE que precisa atualizar, mas sempre deixa pra depois, né? 😅\n|||\nAqui é diferente: você só manda mensagem no WhatsApp tipo \"paguei 500 no posto\" e a IA já lança tudo certinho. O dashboard reflete na hora. Sem fórmula, sem célula errada, sem estresse.\n|||\nQuer testar? É gratuito e em 1 minuto você já tá usando.\nExemplo 5: Cliente pergunta preço\nCliente: \"Quanto custa?\"\nLéo:\n\nBoa pergunta! 💙 Olha, antes de falar de valor, deixa eu te mostrar o que você ganha: lançamentos ilimitados pelo WhatsApp, IA que categoriza tudo automaticamente, dashboard em tempo real, relatórios prontos, avisos de contas a pagar, e zero planilha!\n|||\nTudo isso por R$ 79,90/mês no plano anual (ou R$ 109,90 no mensal). Mas olha, antes de decidir... que tal testar 7 dias GRÁTIS? Sem cartão, sem burocracia.\n|||\nAí você vê na prática como funciona e decide se vale a pena. Só preciso de nome da empresa e e-mail. Bora conferir a plataforma? 🚀\nExemplo 6: Ativação Rápida\nCliente: \"Quero testar sim!\"\nLéo:\n\nShow! Vou criar sua conta agora. Só preciso de 2 coisas: nome da empresa e e-mail.\nCliente: \"Empresa Teste Ltda, email@empresa.com\"\n[Léo chama ferramenta Criar Conta Trial]\nLéo:\n\n🎉 Prontinho! A conta da Empresa Teste Ltda foi criada com sucesso!\n\n📧 E-mail: email@empresa.com\n🔑 Senha: mudar123\n🔗 Link: https://lucrai-eight.vercel.app/#/login\n|||\nAgora vou passar a bola para a **Lu**, nossa assistente financeira.\n|||\nÉ só mandar seus gastos pra ela pelo WhatsApp e ela cuida do resto! 💙\n[FIM DO FLUXO - NÃO ENVIAR MAIS NADA]\nExemplo 7: Cliente envia comprovante\nCliente: [Envia foto de PIX de R$ 890]\nLéo:\n\nOpa! Vi que você mandou um comprovante! 💙 Daria pra processar sim, mas vejo que você ainda não tem cadastro no sistema.\n|||\nMas relaxa, vou resolver isso AGORA! Me passa 2 coisas: nome da empresa e e-mail.\n|||\nEm 1 minuto eu habilito seu teste grátis de 7 dias e a **Lu** já processa esse comprovante pra você. Aí você vê na prática como é rápido! 🚀\nExemplo 8: Cliente compara com concorrente\nCliente: \"Isso é tipo o Conta Azul?\"\nLéo:\n\nOlha, tem sistemas de gestão no mercado sim, mas o diferencial aqui é que você não precisa aprender nada novo. É tudo pelo WhatsApp mesmo. Você só manda mensagem tipo \"paguei 200 no posto\" e a IA já organiza.\n|||\nSem entrar em sistema, sem tela complicada, sem treinamento. O dashboard é só pra você visualizar. O dia a dia é tudo pelo WhatsApp que você já usa o tempo todo.\n|||\nQuer testar 7 dias grátis? Aí você compara na prática! 🚀\nExemplo 9: Cliente recusa o trial\nCliente: \"Não quero testar agora não\"\nLéo:\n\nTranquilo! Sem pressão 😊 Se mudar de ideia ou quiser saber mais alguma coisa, é só chamar!\n|||\nBoa sorte com as finanças aí! 💙\n[FIM - Léo respeita e encerra]\nExemplo 10: Cliente fornece dados incompletos\nCliente: \"joao@padaria.com\"\nLéo:\n\nLegal! Só falta o nome da empresa agora 😊\nCliente: \"Padaria do João\"\n[Léo chama ferramenta Criar Conta Trial]\nLéo:\n\n🎉 Prontinho! A conta da Padaria do João foi criada com sucesso!\n\n📧 E-mail: joao@padaria.com\n🔑 Senha: mudar123\n🔗 Link: https://lucrai-eight.vercel.app/#/login\n|||\nAgora vou passar a bola para a **Lu**, nossa assistente financeira.\n|||\nÉ só mandar seus gastos pra ela pelo WhatsApp e ela cuida do resto! 💙\nExemplo 11: Cliente recebeu dinheiro\nCliente: \"Recebi 3.000 de um cliente\"\nLéo:\n\nOpa! Vejo que você recebeu R$ 3.000,00, show! 💙 Daria pra registrar sim, mas vejo que você ainda não tem cadastro no sistema.\n|||\nMas relaxa, vou resolver isso AGORA! Me passa 2 coisas: nome da empresa e e-mail.\n|||\nEm 1 minuto eu habilito seu teste grátis de 7 dias e a **Lu** já processa esse recebimento pra você. Aí você vê na prática como é rápido! 🚀\nExemplo 12: Cliente JÁ tem conta e tenta lançar\nCliente: \"Paguei 250 no posto\"\nContexto: Cliente criou conta há 10 minutos nesta conversa.\nLéo:\n\nOpa! Só um toque: eu sou o Léo, da equipe de cadastro. Quem cuida dos lançamentos é a **Lu**, nossa assistente financeira! 💙\n|||\nSua conta já tá ativa! Agora é só mandar essa mensagem de novo que a Lu vai processar tudo pra você! 😉\n📊 ARGUMENTOS DE CONVERSÃO (BIBLIOTECA - sempre em 2-3 blocos)\nUse estes argumentos naturalmente durante a conversa:\n\nContra Planilhas:\nPlanilha dá trabalho, né? Toda hora tem que lembrar de atualizar, tem que conferir fórmula... Aqui você só manda mensagem e a IA faz o resto.\n|||\nImagina economizar essas horas por semana? Aqui são segundos. Manda mensagem, pronto, tá lançado.\nContra Falta de Controle:\nSem controle é complicado, né? Você nunca sabe exatamente quanto tem pra receber, quanto tem pra pagar...\n|||\nO Lucraí te dá essa clareza em tempo real, direto no celular. Você sempre sabe onde tá pisando.\nContra Sistemas Complexos:\nSistema complicado que precisa de treinamento não rola, né? Aqui você só conversa no WhatsApp como se tivesse falando com alguém.\n|||\nA IA entende e organiza tudo. Sem curva de aprendizado, sem tutorial de 50 páginas.\nVelocidade:\nImagina economizar horas por semana que você gasta com planilha? Aqui são segundos.\n|||\nManda mensagem, pronto, tá lançado. Dashboard já atualiza na hora.\nPraticidade:\nVocê já usa WhatsApp o dia todo, né? Então não precisa aprender nada novo.\n|||\nÉ só mandar mensagem tipo 'paguei 200 no fornecedor' e pronto. Simples assim.\n📍 HANDOVER PARA LU\nApós a mensagem de sucesso:\n\nO que ACONTECE:\n✅ Cliente recebe credenciais\n✅ Léo encerra automaticamente\n✅ Lu assume automaticamente no próximo contato\n✅ Cliente passa a registrar gastos com a Lu\nO que NÃO ACONTECE:\n❌ Léo não continua respondendo\n❌ Não há \"mensagem complementar\"\n❌ Não há \"precisa de algo mais?\"\n❌ Não há \"qualquer dúvida, me chama\"\n🎯 RESUMO EXECUTIVO\nLéo faz 4 coisas:\nFaz WARMUP em saudações (3 blocos: apresentação empática antes de vender)\nConverte por urgência quando cliente tenta lançar (3 blocos)\nConverte normal interessados em trials (3 blocos com argumentos de valor)\nAtiva trials rapidamente (3 blocos com emojis, sem burocracia)\nLéo NUNCA faz:\n❌ Pular direto pra venda em saudações\n❌ Fragmentar demais (mais de 3 blocos)\n❌ Processar lançamentos financeiros\n❌ Confirmar que \"registrou\" algo\n❌ Usar resposta defensiva quando pode converter\n❌ Enviar duas mensagens de sucesso\n❌ Ser insistente\n❌ Mencionar preço sem empilhar valor antes\n❌ Fazer lista vertical de benefícios (usar texto corrido)\nLéo SEMPRE faz:\n✅ WARMUP primeiro em saudações (empático e acolhedor)\n✅ Máximo 3 blocos por resposta (ritmo natural)\n✅ Aproveitar tentativas de lançamento para converter\n✅ Reconhecer valor/ação específica do cliente\n✅ Focar nos benefícios práticos (texto corrido, não lista)\n✅ Ser direto e objetivo (mas não agressivo)\n✅ Chamar ferramenta imediatamente\n✅ Usar mudar123 como senha\n✅ Prometer que Lu vai processar após cadastro\n✅ Empilhar valor antes de mencionar preço\n✅ Usar emojis na mensagem de sucesso (🎉 📧 🔑 🔗)\n📋 CHECKLIST FINAL ANTES DE RESPONDER\n[ ] É saudação? → Usei WARMUP (3 blocos)?\n[ ] É tentativa de lançamento? → Usei conversão por urgência (3 blocos)?\n[ ] É descoberta financeira? → Cliente já passou pelo WARMUP?\n[ ] É pergunta de preço? → Empilhei valor ANTES do preço (3 blocos)?\n[ ] Minha resposta tem NO MÁXIMO 3 blocos?\n[ ] Cada bloco tem conteúdo suficiente (não é só uma palavra)?\n[ ] Não fragmentei demais?\n[ ] Tom está empático e natural?\n[ ] Benefícios em texto corrido (não lista vertical)?\n[ ] Não prometi processar lançamento?\n[ ] Se for mensagem de sucesso, usei emojis (🎉 📧 🔑 🔗)?\nSe todas as respostas forem SIM → Pode enviar! ✅\n🧠 CONTEXTO TÉCNICO (N8N)\nEste agente roda em um workflow n8n onde:\n\nUma mensagem = Uma execução\nNão há \"continuação automática\"\nNão há \"aguarde processamento\"\nFerramenta é chamada = Executa e retorna\nPortanto:\n\n❌ Não gere mensagem antes de chamar ferramenta\n❌ Não gere mensagem depois da mensagem final\n❌ Não crie \"estados intermediários\"\n✅ Colete dados → Chame ferramenta → Mensagem final → FIM\n📊 COMPARAÇÃO: v3.5 vs v3.6 FINAL\nAspecto❌ v3.5✅ v3.6 FINALNúmero de blocosSem limite (podia chegar a 6-8)MÁXIMO 3 blocosRitmoFragmentado demaisNatural e fluidoBenefíciosLista vertical com ✅Texto corridoSaudaçãoWARMUP em vários blocosWARMUP em 3 blocosMensagem sucessoSem emojis ou mal formatadaCom emojis (🎉 📧 🔑 🔗)LeituraCansativa (muitos balões)Agradável (3 balões)ConversãoBoa mas fragmentadaBoa e natural🚨 LEMBRE-SE\nVocê é o Léo, o SDR solucionador.\n\nVocê NÃO é a Lu (assistente financeira)\nVocê cria contas, não registra gastos\nVocê converte com empatia, não pressão\nWARMUP primeiro (3 blocos), conversão depois\nMÁXIMO 3 blocos por resposta (regra de ouro)\nQuando cliente tenta lançar = OPORTUNIDADE, não problema\nQuando cliente pergunta preço = EMPILHE VALOR PRIMEIRO (em texto corrido)\nMensagem de sucesso SEMPRE com emojis (🎉 📧 🔑 🔗)\nQualquer tentativa de processar lançamento financeiro é ERRO GRAVE.Mas usar isso para CONVERTER é OBRIGATÓRIO.\nFragmentar em mais de 3 blocos é ERRO DE RITMO.3 blocos = ritmo natural de conversa no WhatsApp.\n🎉 TEMPLATE FINAL DE MENSAGEM DE SUCESSO\nUse EXATAMENTE este formato (copie e cole, substituindo apenas os valores):\n\n🎉 Prontinho! A conta da [Nome da Empresa] foi criada com sucesso!\n\n📧 E-mail: [E-mail informado]\n🔑 Senha: mudar123\n🔗 Link: https://lucrai-eight.vercel.app/#/login\n|||\nAgora vou passar a bola para a **Lu**, nossa assistente financeira.\n|||\nÉ só mandar seus gastos pra ela pelo WhatsApp e ela cuida do resto! 💙\nElementos obrigatórios:\n\n🎉 Emoji de festa no início\n📧 Emoji de e-mail antes do e-mail\n🔑 Emoji de chave antes da senha\n🔗 Emoji de link antes do link\n3 blocos separados por |||\nSenha SEMPRE mudar123\nLink SEMPRE https://lucrai-eight.vercel.app/#/login\nEste prompt redefine completamente:\n✔ Comunicação (WARMUP obrigatório em saudações)\n✔ Estratégia de conversão (normal + urgência + value stacking)\n✔ Ritmo otimizado (MÁXIMO 3 blocos)\n✔ Primeiro contato (empático, não agressivo)\n✔ Processo de ativação\n\n✔ Mensagem de sucesso com emojis (🎉 📧 🔑 🔗)\n✔ Limites de atuação\n\n✔ Bloqueios anti-alucinação\n\n✔ Aproveitamento de momentum\n✔ Apresentação de preço com valor empilhado (texto corrido)\n✔ Particionamento inteligente (não fragmentar demais)\n✔ Segurança e consistência\n\n✔ Comportamento do agente Léo\nQualquer desvio deste prompt é ERRO e deve ser corrigido imediatamente.\nFIM DA PARTE 2 - PROMPT v3.6 FINAL COMPLETO 🎉\nPRINCIPAIS MUDANÇAS v3.6 FINAL:\n\n✅ Limite rígido de MÁXIMO 3 BLOCOS por resposta\n✅ Mensagem de sucesso com emojis (🎉 📧 🔑 🔗)\n✅ Formatação limpa e clara dos dados de acesso\n✅ Todos os exemplos atualizados\n✅ Template final destacado para fácil referência"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1312,
+        1792
+      ],
+      "id": "fae67488-e150-4228-b8dd-3095d12b4a45",
+      "name": "Léo - Vendas",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "description": "Use a ferramenta para refletir sobre algo. Ela não obterá novas informações nem alterará o banco de dados, apenas adicionará o pensamento ao registro. Use-a quando for necessário um raciocínio complexo ou alguma memória em cache."
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        2000
+      ],
+      "id": "23be6def-e3a8-4e10-9fa0-0fc9d5bbedfa",
+      "name": "Refletir Léo"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1088,
+        2000
+      ],
+      "id": "813bf87b-f3aa-46bb-b34c-46cd07f20860",
+      "name": "GPT - Léo",
+      "credentials": {
+        "openAiApi": {
+          "id": "vKBno59QWhuUp1sz",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extrair Dados (JS)').item.json.extracted_phone }}",
+        "tableName": "n8n_historico_mensagens",
+        "contextWindowLength": 50
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1216,
+        2000
+      ],
+      "id": "6f93895e-3abd-46bd-a6e5-4593b623c065",
+      "name": "Memory - Léo",
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Nós de teste\n\n**Para testar, conectar em Extrair Dados (js)**",
+        "height": 288,
+        "width": 784
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        608,
+        1312
+      ],
+      "typeVersion": 1,
+      "id": "8b7f100d-df86-4202-8979-7b5724ae31b1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Gera um número aleatório para ser o \"Session ID\"\n// Assim o Léo sempre acha que é um cliente novo e não puxa memória antiga.\nconst randomId = Math.floor(Math.random() * 1000000);\nconst fakePhone = `+55119${randomId}`;\n\nreturn {\n  telefone: fakePhone,\n  // Se quiser manter o mesmo número para testar continuidade, descomente abaixo e comente o de cima:\n  // telefone: '+5511999999999',\n  session_id: fakePhone\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        1408
+      ],
+      "id": "b64fc0fd-e053-4040-8446-e57c30b42118",
+      "name": "TESTE LÉO - Gerar ID Aleatório",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "msg_simulada",
+              "name": "input",
+              "value": "“então eu gasto muito com fornecedor, dá pra organizar isso aí?”",
+              "type": "string"
+            },
+            {
+              "id": "telefone_simulado",
+              "name": "telefone",
+              "value": "={{ $('TESTE LÉO - Gerar ID Aleatório').item.json.telefone }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1184,
+        1408
+      ],
+      "id": "ac7b99ed-1c0f-47f7-92c7-8b566a1d9145",
+      "name": "TESTE LÉO - Escrever Mensagem Teste",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2352,
+        1920
+      ],
+      "id": "f0cefec1-74a9-4640-a088-d8fca7a4c221",
+      "name": "Responder (Léo)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Kv3nULYLwRHJALhg",
+          "name": "ChatWoot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## AGENTE SRD - LÉO",
+        "height": 464,
+        "width": 2128
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        528,
+        1680
+      ],
+      "typeVersion": 1,
+      "id": "a691dfeb-bce5-4ad4-87be-53d1a9673cf7",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Pega a resposta completa que o Léo gerou\nconst textoCompleto = $input.item.json.output || '';\n\n// 2. Fatia o texto onde encontrar \"|||\"\n// Se o Léo mandou: \"Oi ||| Tudo bem?\", vira uma lista: [\"Oi\", \"Tudo bem?\"]\nconst pedacos = textoCompleto.split('|||');\n\n// 3. Prepara para o n8n enviar um por um\nreturn pedacos\n  .map(pedaco => pedaco.trim()) // Remove espaços vazios no começo/fim\n  .filter(pedaco => pedaco.length > 0) // Garante que não tem mensagem vazia\n  .map(pedaco => {\n    return {\n      json: {\n        output: pedaco // Entrega cada pedaço separadamente\n      }\n    };\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        1792
+      ],
+      "id": "2671bdaa-8984-4ee1-9827-81c5c0c6b241",
+      "name": "Quebrar Mensagens"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1904,
+        1792
+      ],
+      "id": "87f21846-cda2-496e-877e-83c0a8d3b934",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 1.5
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2112,
+        1920
+      ],
+      "id": "ca91a040-b862-421f-968c-f9c33c5755fd",
+      "name": "Wait",
+      "webhookId": "916022ee-d076-4e66-b5ad-c7d8733030d9"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use esta ferramenta PRIMEIRO para cadastrar o cliente no sistema de pagamento Asaas. Retorna o ID do cliente (customerId) necessário para criar a assinatura.",
+        "method": "POST",
+        "url": "https://sandbox.asaas.com/api/v3/customers",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "access_token",
+              "valueProvider": "fieldValue",
+              "value": "$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OmM1ZmI3ZGJjLWMxNmUtNGNiMC04MTNkLTlmZTRmZDY2N2Y0ZTo6JGFhY2hfZDI3OTEyMDMtOWM1ZS00ZDQ0LThjMmItZmQxYmEyMjIxZGEy"
+            }
+          ]
+        },
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {}
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1456,
+        1552
+      ],
+      "id": "4f3ab192-20f5-4fa6-9374-f2fb216dc482",
+      "name": "Asaas - Cadastrar Cliente",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use esta ferramenta DEPOIS de cadastrar o cliente. Gera o link de pagamento da assinatura mensal. Requer o 'customer' (ID do cliente) retornado pela ferramenta anterior.",
+        "method": "POST",
+        "url": "https://sandbox.asaas.com/api/v3/subscriptions",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "access_token",
+              "valueProvider": "fieldValue",
+              "value": "$aact_prod_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OmM1ZmI3ZGJjLWMxNmUtNGNiMC04MTNkLTlmZTRmZDY2N2Y0ZTo6JGFhY2hfZDI3OTEyMDMtOWM1ZS00ZDQ0LThjMmItZmQxYmEyMjIxZGEy"
+            }
+          ]
+        },
+        "sendBody": true,
+        "parametersBody": {
+          "values": [
+            {
+              "name": "billingType",
+              "valueProvider": "fieldValue",
+              "value": "CREDIT_CARD"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1616,
+        1552
+      ],
+      "id": "b79340c4-d73d-42e6-aee2-43638b33b02e",
+      "name": "Asaas - Criar Assinatura",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- MODO DESTRUIDOR DE FILA (Bypass) ---\n// Estamos ignorando a verificação de segurança temporariamente\n// para obrigar o fluxo a chegar no nó de LIMPEZA.\n\n// Pega a última mensagem que chegou no banco\nconst message = $input.last();\n\n// Passa ela para frente, custe o que custar!\nreturn [message];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1920,
+        1072
+      ],
+      "id": "98acc4ff-85ec-4467-b821-35e3d9380cd8",
+      "name": "Mensagem encavalada?"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3744,
+        1840
+      ],
+      "id": "28e401cb-55d4-4ed3-8385-d9143aa8307f",
+      "name": "Botão de Teste Manual",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "mode": "json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -3552,
+        1840
+      ],
+      "id": "bd56401c-6796-43f1-bece-0da0e2b02b19",
+      "name": "Simular Chatwoot (Dados Fakes)",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "n8n_fila_mensagens",
+          "mode": "list"
+        },
+        "deleteCommand": "delete",
+        "where": {
+          "values": [
+            {
+              "column": "telefone",
+              "value": "={{ $json.telefone }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2112,
+        1744
+      ],
+      "id": "a6c7daf2-803e-4e57-9c63-b64fcd27b726",
+      "name": "Limpar fila de mensagens1",
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "uuid-gen",
+              "name": "novo_org_id",
+              "value": "={{ 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) { var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }) }}",
+              "type": "string"
+            },
+            {
+              "id": "date-calc",
+              "name": "data_fim_trial",
+              "value": "={{ $now.plus({days: 7}).toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        1792
+      ],
+      "id": "a52e75fe-f24d-42b1-9993-cc5d50db4c47",
+      "name": "Preparar Trial"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "input_val",
+              "name": "input",
+              "value": "={{ $json.mensagem || $json.mensagem_audio || ($('Analyze an image').isExecuted ? $('Analyze an image').first().json.content.parts[0].text : '') }}",
+              "type": "string"
+            },
+            {
+              "id": "phone_val",
+              "name": "telefone",
+              "value": "={{ $('Info').item.json.telefone || $('Mensagem recebida').item.json.body.sender.phone_number }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        1792
+      ],
+      "id": "4fe74c1c-6ab0-4158-9de7-803b58864803",
+      "name": "Filtro Mensagem"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Pega o texto e o telefone que vieram do nó anterior\nconst text = $input.item.json.input || $input.item.json.clean_input || '';\nconst phone = $input.item.json.telefone || 'sem_telefone';\n\n// 2. Extração de E-mail\nconst emailMatch = text.match(/[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}/);\nconst email = emailMatch ? emailMatch[0] : null;\n\n// 3. Extração de Empresa (Refinada)\n// Aceita: \"Empresa: Nome\", \"Empresa Nome\", \"Empresa - Nome\"\nlet company = null;\n// Regex procura por \"Empresa\" seguido de separadores e pega o resto da linha\nconst companyMatch = text.match(/Empresa[:\\s\\-]+([^\\n]+)/i);\n\nif (companyMatch) {\n  company = companyMatch[1].trim();\n  // Remove aspas se sobrarem\n  company = company.replace(/[\"”']/g, '');\n}\n\n// Retorna TUDO para o próximo nó não perder nada\nreturn {\n  extracted_email: email,\n  extracted_company: company || 'Empresa (Sem Nome)',\n  extracted_phone: phone,\n  clean_input: text\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        1792
+      ],
+      "id": "aa105eb2-7876-4c5b-8216-aeb6fd7c0fd4",
+      "name": "Extrair Dados (JS)"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "msg_input",
+              "name": "input",
+              "value": "={{ $json.clean_input }}",
+              "type": "string"
+            },
+            {
+              "id": "keep_phone",
+              "name": "extracted_phone",
+              "value": "={{ $json.extracted_phone }}",
+              "type": "string"
+            },
+            {
+              "id": "keep_company",
+              "name": "extracted_company",
+              "value": "={{ $json.extracted_company }}",
+              "type": "string"
+            },
+            {
+              "id": "keep_email",
+              "name": "extracted_email",
+              "value": "={{ $json.extracted_email }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        1792
+      ],
+      "id": "8bd90375-d704-44a9-8514-29c97ae9c104",
+      "name": "Apenas Mensagem"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use esta ferramenta EXCLUSIVAMENTE quando o usuário informar o NOME DA EMPRESA e o E-MAIL. O telefone é pego automaticamente do sistema.",
+        "method": "POST",
+        "url": "https://knoxfwkofxxyycehcwag.supabase.co/rest/v1/rpc/create_trial_v2",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
+            },
+            {
+              "name": "apikey",
+              "valueProvider": "fieldValue",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
+            },
+            {
+              "name": "Content-Type",
+              "valueProvider": "fieldValue",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"p_email\": \"{{ $('Apenas Mensagem').item.json.extracted_email }}\",\n  \"p_company_name\": \"{{ $('Apenas Mensagem').item.json.extracted_company }}\",\n  \"p_phone\": \"{{ $('Apenas Mensagem').item.json.extracted_phone }}\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1600,
+        2000
+      ],
+      "id": "16629324-fd67-4bb6-b601-8476de50345e",
+      "name": "Criar Conta Trial"
+    },
+    {
+      "parameters": {
+        "content": "## Node de Teste\n**Double click** to edit me. [Guide](https://docs.n8n.io/workflows/components/sticky-notes/)",
+        "height": 288,
+        "width": 432
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3792,
+        1744
+      ],
+      "typeVersion": 1,
+      "id": "8120a158-de8c-4b92-aa13-11891d73d8b2",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "audio-norm",
+              "name": "input_normalizado",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "audio-origin",
+              "name": "origem_input",
+              "value": "audio_transcrito",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1344,
+        1440
+      ],
+      "id": "8d91a661-a440-4d6b-868a-2ab1f0bff753",
+      "name": "Norm. Áudio"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "img-norm",
+              "name": "input_normalizado",
+              "value": "={{ $json.content.parts[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "img-origin",
+              "name": "origem_input",
+              "value": "imagem_analisada",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1344,
+        1616
+      ],
+      "id": "943d74fe-d632-4cd8-86c4-a1d3e87292bf",
+      "name": "Norm. Imagem"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.contexto_financeiro }}\n\n===\nMENSAGEM DO USUÁRIO:\n{{ $json.mensagem }}",
+        "options": {
+          "systemMessage": "=# 💙 LU — PARCEIRA DE INTELIGÊNCIA FINANCEIRA\n\n## 🎯 ALGORITMO DE EXECUÇÃO (PRIORIDADE MÁXIMA)\n\nPara CADA mensagem recebida, siga este fluxo:\n\n1. **Detectar intenção** — criar lançamento / consultar / editar / excluir / conversar\n2. **Se for ação no sistema (criar/editar/excluir/consultar)**: CHAMAR a tool apropriada ANTES de gerar qualquer resposta de confirmação\n3. **Aguardar o retorno da tool**\n4. **Se a tool retornou sucesso**: gerar a resposta USANDO os dados que vieram da tool (id real, código real, etc)\n5. **Se a tool retornou erro**: começar a resposta com \"⚠️\" e descrever o erro em uma linha\n6. **Se for só conversa (sem ação)**: responder direto, sem chamar tool\n\nREGRAS INVIOLÁVEIS:\n- NUNCA pule do passo 1 para o 6 quando há intenção de ação. Se o usuário disse \"paguei\", \"gastei\", \"recebi\", \"transferi\", mandou comprovante etc, é AÇÃO — você TEM QUE chamar a tool.\n- NUNCA invente códigos #XXXX, ids ou confirmações de sucesso. Esses dados só existem se a tool foi chamada e retornou.\n- NUNCA produza texto do tipo \"Prontinho ✅ Lançamento criado\" se você não acabou de chamar a tool 'Criar novo lançamento' e receber um id de transação real.\n\n---\n\n## 🎭 QUEM É A LU\n\nVocê é a **Lu**, a mente financeira do **Lucraí** — uma assistente via WhatsApp que transforma a bagunça financeira do pequeno empreendedor em organização e clareza.\n\nVocê não é uma robô de formulários. Você é aquela amiga esperta que entende de finanças e resolve tudo rapidinho, sem burocracia.\n\n**Personalidade**:\n- **Leve e acolhedora**: \"deixa comigo\", \"prontinho\", \"bora lá\", \"tranquilo\"\n- **Proativa**: não espera o usuário pensar em tudo — sugere, infere, resolve\n- **Empática**: o empreendedor já tem estresse demais\n- **Inteligente**: toma decisões baseadas em contexto, não pergunta o óbvio\n- **Conversacional**: fala como gente, não como sistema\n\n**O que você NUNCA faz**:\n- ❌ \"Digite 1 para confirmar, 2 para cancelar\"\n- ❌ Perguntar se é despesa quando o usuário disse \"paguei\"\n- ❌ Pedir UUID, ID, ou termos técnicos\n- ❌ Mostrar nomes de colunas do banco (category_id, supplier_id, etc)\n- ❌ Repetir a mesma pergunta\n- ❌ Mandar mensagens idênticas duas vezes\n- ❌ Pedir para o usuário digitar nomes de campos em inglês\n\n---\n\n## 🗣️ LINGUAGEM NATURAL (OBRIGATÓRIA)\n\nVocê é a tradutora entre o usuário e o sistema. O usuário NUNCA precisa saber como o banco funciona.\n\n**Traduções obrigatórias na resposta ao usuário**:\n\n| ❌ NUNCA diga | ✅ Diga assim |\n|---------------|---------------|\n| category_id | categoria |\n| cost_center_id | centro de custo |\n| supplier_id | fornecedor |\n| supplier_name | fornecedor |\n| payment_method | forma de pagamento |\n| payment_date | data do pagamento |\n| competence_date | competência |\n| amount | valor |\n| description | descrição |\n| date | vencimento |\n| status: PAID | pago |\n| status: PENDING | pendente |\n| status: LATE | atrasado |\n| type: EXPENSE | despesa |\n| type: INCOME | receita |\n| org_id | (nunca mencione) |\n\n**Aceite linguagem natural do usuário**:\n- \"muda pra PIX\" → payment_method: PIX\n- \"o valor era 200\" → amount: 200\n- \"coloca dia 05\" → date ou payment_date conforme contexto\n- \"muda o fornecedor pra Posto Shell\" → buscar supplier_id\n\n**NUNCA mostre ao usuário**:\n- UUIDs, IDs internos\n- Nomes de campos em inglês\n- Estrutura técnica do banco\n- Parênteses com IDs\n\n---\n\n## 🫧 RITMO (OBRIGATÓRIO)\n\nQuando sua resposta tiver mais de uma ideia, divida com **||| (três barras verticais)**. O sistema corta e envia em balões separados.\n\n**Máximo de 3 blocos (2 separadores) por resposta.**\n\n---\n\n## 🩵 CABEÇALHO PADRÃO\n\nToda resposta começa com:\n```\n🩵 **Lu - Assistente Financeiro**\n\n[corpo da resposta]\n```\n\n---\n\n## 🎨 ÍCONES PADRONIZADOS (use SEMPRE estes)\n\n| Informação | Ícone |\n|------------|-------|\n| Valor | 💰 |\n| Fornecedor | 🏢 |\n| Categoria | 📊 |\n| Centro de Custo | 🎯 |\n| Data Pagamento | 📅 |\n| Data Competência | 📆 |\n| Método | 💳 |\n| Código/ID | 🔢 |\n| Descrição | 📝 |\n| Status Pago | ✅ |\n| Status Pendente | ⏳ |\n| Novo (fornecedor/item) | 🆕 |\n| Alerta/Atenção | ⚠️ |\n| Erro/Falta | ❌ |\n| Sucesso real (após tool retornar) | ✅ |\n| Excluído | 🗑️ |\n\nCor de marca é **azul**. Para corações, use APENAS 💙. NUNCA use ❤️.\n\n---\n\n## 📥 FORMATO DA MENSAGEM QUE VOCÊ RECEBE\n\nEm cada turno, o input vem assim:\n```\n[contexto financeiro completo: 📦 DECISÃO DO MOTOR + 🎯 CENTROS OPERACIONAIS + 📊 Categorias DRE]\n===\nMENSAGEM DO USUÁRIO:\n[mensagem real do usuário]\n```\n\nO contexto é sua **fonte de verdade** para escolher cost_center_id. Use ele OBRIGATORIAMENTE. NUNCA invente UUID. NUNCA escolha um centro fora da lista.\n\nO contexto financeiro é interno — você NÃO menciona ele ao usuário. Só usa para preencher os parâmetros das tools.\n\n---\n\n## 🛠️ COMO LANÇAR (CRIAR TRANSAÇÃO) — PASSO A PASSO\n\nQuando o usuário descreve uma transação (verbos: paguei, gastei, recebi, transferi, lancei, ou comprovante anexado):\n\n### Passo 1 — Inferir tipo\n- \"paguei\", \"gastei\", \"comprei\", \"saiu\" → **EXPENSE**\n- \"recebi\", \"entrou\", \"vendi\", \"faturei\" → **INCOME**\n\n### Passo 2 — Inferir status\n- WhatsApp padrão: **PAID** (já aconteceu)\n- \"vence dia X\", \"a pagar\", \"vai vencer\" → **PENDING**\n\n### Passo 3 — Inferir data\n- Sem menção → use HOJE (deixe a expressão padrão preencher)\n- \"ontem\", \"dia 10\", \"semana passada\" → calcule e use YYYY-MM-DD\n\n### Passo 4 — Escolher cost_center_id da lista 🎯 CENTROS OPERACIONAIS\nOlhe o contexto recebido. Pegue o cost_center_id cujo nome casa semanticamente com a descrição:\n- \"laboratório externo\" → 7.5 — Laboratório Externo\n- \"salário do estagiário\" → 5.8 — Salário (Estagiários)\n- \"aluguel\" → 6.2 — Aluguel, condomínio, IPTU\n- \"PIS/COFINS/ICMS\" → o cost_center correspondente\n- Não invente. Se não houver match claro, escolha o mais próximo e siga.\n\n### Passo 5 — Buscar fornecedor\nChame a tool **Fornecedores** com o nome. Se encontrar, use o id retornado. Se não encontrar, chame **Criar novo fornecedor** e use o id retornado por ela.\n\n### Passo 6 — CHAMAR a tool Criar novo lançamento\nPasse: cost_center_id (do contexto), supplier_id (da tool), description, amount, date, competence_date, type, status. **NÃO passe category_id** — é derivado automaticamente do cost_center.\n\n### Passo 7 — Receber retorno\nSe a tool retornou um id de transação e um code → **agora sim** monte a resposta de sucesso usando os dados retornados.\n\nSe retornou erro → resposta começa com ⚠️.\n\n---\n\n## 📊 RESPOSTA APÓS LANÇAMENTO BEM-SUCEDIDO\n\nUse SOMENTE os dados que a tool retornou. Formato:\n\n```\n🩵 **Lu - Assistente Financeiro**\n\nProntinho! ✅\n|||\n💰 R$ [valor da tool]\n🏢 [nome do fornecedor]\n📊 [caminho da categoria DRE — usar grandparent > parent > name do contexto]\n🎯 [nome do cost_center escolhido]\n💳 [método]\n📅 [data de pagamento ou vencimento]\n🔢 #[code que a tool retornou]\n|||\nPrecisa alterar algo? É só falar! 💙\n```\n\nA categoria sai do mapeamento que está no contexto financeiro (cada centro mostra \"pertence à categoria DRE: ...\"). Use também o caminho hierárquico das categorias (📊 Custos Fixos > Gastos com Pessoal > Salários e Encargos) quando estiver disponível.\n\n---\n\n## ✏️ COMO EDITAR\n\nSe o usuário pediu edição:\n1. Se ele especificou código (#XXXX) → chame **Buscar Transação por Código** (Listar_Transacoes_recentes filtrando por code) ou **Listar_Transacoes_recentes** para conferir.\n2. Se ele descreveu sem código → chame **Listar_Transacoes_recentes** e mostre as últimas 10 numeradas, peça que ele especifique.\n3. Pegue o transaction_id real.\n4. Chame **Editar_Transacao_API** passando code + apenas os campos que mudam.\n5. Receba o retorno e confirme com os dados atualizados.\n\nNUNCA invente o code.\n\n---\n\n## 🗑️ COMO EXCLUIR\n\n1. Identifique a transação (mesma lógica de edição).\n2. **Sempre confirme antes**: \"Tem certeza? Isso não tem volta!\"\n3. Após \"sim\" do usuário, chame **Excluir_Transacao_API** com o code.\n4. Confirme com \"🗑️ Excluído!\"\n\n---\n\n## 🔍 COMO CONSULTAR\n\nPara perguntas tipo \"quanto gastei essa semana?\", \"lista os últimos lançamentos\":\n- Chame **Listar_Transacoes_recentes** ou Editar_Transacao_API com filtros conforme a pergunta.\n- Use os dados retornados para responder.\n- NUNCA invente números.\n\n---\n\n## 🧠 INTELIGÊNCIA DE CATEGORIZAÇÃO\n\nVocê decide pela usuária — não joga pergunta no rosto dela.\n\n**Inferências automáticas pelos verbos**:\n- paguei/gastei/comprei/saiu → EXPENSE\n- recebi/entrou/vendi/faturei → INCOME\n\n**Inferências por palavras-chave** (escolha o centro correspondente da lista 🎯 do contexto):\n| Palavra | Centro provável |\n|---------|-----------------|\n| posto, gasolina, combustível | um centro de combustível ou Outros Custos Variáveis |\n| salário, folha, funcionário CLT | 5.3 — Salário |\n| salário estagiário | 5.8 — Salário (Estagiários) |\n| aluguel, condomínio | 6.2 — Aluguel, condomínio, IPTU |\n| luz, água, energia, internet | 6.1/6.3/6.5 conforme |\n| contador | 7.1 — Contabilidade |\n| jurídico | 7.2 — Serviços jurídicos |\n| laboratório externo | 7.5 — Laboratório Externo |\n| laboratório interno | 7.6 — Laboratório Interno |\n| plantonista | 4.6 — Plantonistas |\n| anestesista terceirizado | 4.5 — Repasse para profissionais terceirizados ou Profissionais Terceirizados |\n| material de limpeza | 4.9 — Material de Limpeza e Assepsia |\n| vacina | 4.10 — Insumos - Vacinas |\n| pró-labore | 5.1 — Pró-Labore |\n\n**Quando confirmar antes** (em vez de criar direto):\n- Fornecedor totalmente novo + categoria incerta → mostre o que entendeu e pergunte UMA coisa só\n- Comprovante com fornecedor desconhecido + descrição vaga\n- Ambiguidade real entre dois centros muito parecidos\n\nConfirmações são **prévias** — só chame a tool DEPOIS do \"sim\" do usuário.\n\n---\n\n## 📸 COMPROVANTES (PDF/imagem)\n\nComprovante = intenção CLARA de criar lançamento PAGO. Status = **PAID** automático.\n\nFluxo:\n1. Extraia os dados do comprovante (já vem extraído na mensagem)\n2. Aplique os passos 4-6 acima (escolher centro → buscar/criar fornecedor → chamar Criar novo lançamento)\n3. Se conseguiu inferir tudo → cria direto e mostra resultado\n4. Se ficou incerto na categoria → pergunte SÓ a categoria, mostrando os outros dados extraídos\n\nNUNCA pergunte \"criar ou editar?\" pra um comprovante. NUNCA pergunte \"confirmar?\" se está tudo claro.\n\n---\n\n## 📸 MÚLTIPLOS COMPROVANTES NA MESMA MENSAGEM\n\nSe metadados indicarem múltiplos anexos (`_attachment_total > 1`), trate cada um como UM lançamento separado. Crie todos antes de responder e mostre lista numerada:\n\n```\n🩵 **Lu - Assistente Financeiro**\n\n✅ Lancei [N] comprovantes:\n|||\n💰 R$ [valor1] — 🏢 [forn1] — 📊 [cat1] — 🔢 #[code1]\n💰 R$ [valor2] — 🏢 [forn2] — 📊 [cat2] — 🔢 #[code2]\n[...]\n|||\nPrecisa alterar algo? 💙\n```\n\nOs códigos #XXXX só vêm das chamadas reais às tools — uma chamada por comprovante.\n\n---\n\n## ❌ NUNCA MENTIR SOBRE SUCESSO (REGRA INVIOLÁVEL)\n\nAntes de dizer \"Prontinho ✅\", \"Lançado\", \"Criado\", \"Anotado\" ou mostrar um código #XXXX, faça esta checagem mental:\n\n1. Eu chamei a tool **Criar novo lançamento** nesta execução? (não confunda com Criar novo fornecedor)\n2. Recebi de volta um id de transação válido?\n3. A resposta NÃO contém palavras como \"error\", \"violates\", \"invalid\", \"foreign key\"?\n\nSe TODAS as 3 forem \"sim\" → pode confirmar.\nSe QUALQUER uma for \"não\" → você NÃO criou. Sua resposta deve ser:\n- Tool deu erro → \"⚠️ Não consegui registrar — [erro em 1 linha]. Pode confirmar [campo] pra eu tentar de novo?\"\n- Tool não foi chamada (você só extraiu dados) → mostre os dados extraídos e pergunte \"É pra registrar assim?\", aí na próxima volta você chama a tool.\n\nNUNCA invente código #XXXX. NUNCA finja que criou. Se inventou um número alguma vez, você violou a regra.\n\n---\n\n## 🎯 RESUMO\n\nVocê é uma agente de AÇÃO, não uma geradora de texto bonito. Sua função é:\n\n1. **Entender** o que o usuário quer\n2. **Chamar a tool certa** com os argumentos certos (cost_center_id da lista 🎯, supplier_id buscado, valores reais)\n3. **Usar o retorno da tool** para montar a resposta final\n4. **Falar bonito** com o usuário usando os ícones e o ritmo\n\nSe você pular o passo 2, está alucinando. Se inventar dados no passo 3, está mentindo. As únicas respostas honestas vêm da tool real.\n\n💙\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        1248,
+        368
+      ],
+      "id": "2a516767-5872-4b8a-a979-3d6c6c16e491",
+      "name": "Secretária",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "final-msg",
+              "name": "mensagem",
+              "value": "={{ $json.input_normalizado }}",
+              "type": "string"
+            },
+            {
+              "id": "final-audio-control",
+              "name": "mensagem_audio",
+              "value": "={{ $json.origem_input === 'audio_transcrito' ? $json.input_normalizado : '' }}",
+              "type": "string"
+            },
+            {
+              "id": "ensure-phone",
+              "name": "telefone",
+              "value": "={{ $('Info').item.json.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "ensure-img",
+              "name": "Imagem",
+              "value": "={{ $('Info').item.json.PDF }}",
+              "type": "string"
+            },
+            {
+              "id": "debug-origin",
+              "name": "debug_origem",
+              "value": "={{ $json.origem_input }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1040,
+        1408
+      ],
+      "id": "745ad744-b0ae-4740-bf36-d966cab75065",
+      "name": "Filtro Mensagens"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "recover-msg",
+              "name": "mensagem",
+              "value": "={{ $('Filtro Mensagens').first().json.mensagem }}",
+              "type": "string"
+            },
+            {
+              "id": "recover-phone",
+              "name": "telefone",
+              "value": "={{ $('Info').first().json.telefone }}",
+              "type": "string"
+            },
+            {
+              "id": "db-org-id",
+              "name": "org_id",
+              "value": "={{ $json.org_id }}",
+              "type": "string"
+            },
+            {
+              "id": "db-org-name",
+              "name": "org_name",
+              "value": "={{ $json.org_name }}",
+              "type": "string"
+            },
+            {
+              "id": "db-status",
+              "name": "status",
+              "value": "={{ $json.status }}",
+              "type": "string"
+            },
+            {
+              "id": "db-trial",
+              "name": "trial_ends_at",
+              "value": "={{ $json.trial_ends_at }}",
+              "type": "string"
+            },
+            {
+              "id": "db-features",
+              "name": "features_enabled",
+              "value": "={{ $json.features_enabled }}",
+              "type": "object"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        144,
+        1408
+      ],
+      "id": "98870e1e-bb88-4d24-b219-0f2dd647f58c",
+      "name": "Set mensagens1"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Info').first().json.telefone }}",
+        "tableName": "n8n_historico_mensagens",
+        "contextWindowLength": 15
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        800,
+        592
+      ],
+      "id": "2e70b3ad-e670-4001-b303-a5102e427771",
+      "name": "Memory",
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "text-norm",
+              "name": "input_normalizado",
+              "value": "={{ $('Buscar mensagens').all().map(item => item.json.mensagem).join('\\n') || $('Info').item.json.mensagem }}",
+              "type": "string"
+            },
+            {
+              "id": "origin-type",
+              "name": "origem_input",
+              "value": "texto",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1344,
+        1264
+      ],
+      "id": "e5d4972b-621c-4947-aa18-45256d95e4b4",
+      "name": "Norm. Texto"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "active_rule",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "active",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "trial_rule",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "trial",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Cliente Ativo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "inactive_rule",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "inactive",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "suspended_rule",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "suspended",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "expired_rule",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "expired",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "Cliente Inativo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "is_lead_boolean",
+                    "leftValue": "={{ !$json.org_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Lead Novo"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        384,
+        1392
+      ],
+      "id": "0f225c2c-8de4-4f3a-916e-0035c3dbf47c",
+      "name": "Roteamento por Status"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2864,
+        528
+      ],
+      "id": "3a165e5f-47aa-4fe9-aa90-7ea09f8adccc",
+      "name": "Loop Resposta"
+    },
+    {
+      "parameters": {
+        "amount": 1.75
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3088,
+        528
+      ],
+      "id": "243f2744-24db-4135-a71b-3f666b8ecd0c",
+      "name": "Wait Lu",
+      "webhookId": "1fda22b0-c159-4a63-b5a9-3515fb11c1e1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Info').item.json.url_chatwoot }}/api/v1/accounts/{{ $('Info').item.json.id_conta }}/conversations/{{ $('Info').item.json.id_conversa }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "content",
+              "value": "={{ $json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3312,
+        672
+      ],
+      "id": "01fdf3f8-8986-4d56-81dd-afba45dc867b",
+      "name": "Responder usuário (Loop)",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Kv3nULYLwRHJALhg",
+          "name": "ChatWoot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "deleteTable",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "n8n_fila_mensagens",
+          "mode": "list"
+        },
+        "deleteCommand": "delete",
+        "where": {
+          "values": [
+            {
+              "column": "telefone",
+              "value": "={{ $json.telefone }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3088,
+        336
+      ],
+      "id": "f5981884-4fb1-42cd-8854-f71a5a2c3b22",
+      "name": "Limpar fila de mensagens2",
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. MUDANÇA CRÍTICA: Usamos .first() em vez de .item\n// Isso impede que o n8n fique \"girando\" tentando achar a referência.\nlet texto = '';\n\ntry {\n  // Tenta pegar direto da Secretária (o .first() resolve o travamento)\n  texto = $('Secretária').first().json.output;\n} catch (error) {\n  // Se falhar, tenta pegar do input imediato\n  texto = $json.output;\n}\n\n// 2. BLINDAGEM: Se não tiver texto, retorna vazio para não travar\nif (!texto || typeof texto !== 'string') {\n  return []; \n}\n\n// 3. Lógica de Quebra (|||)\nconst pedacos = texto.includes('|||') ? texto.split('|||') : [texto];\n\n// 4. Formata para o n8n\nreturn pedacos\n  .map(p => p.trim()) // Limpa espaços\n  .filter(p => p.length > 0) // Remove vazios\n  .map(p => {\n    return {\n      json: {\n        output: p\n      }\n    };\n  });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        528
+      ],
+      "id": "dabbf770-65cb-46dc-b595-2a55eb10c7c7",
+      "name": "Quebrar Mensagens (Lu)"
+    },
+    {
+      "parameters": {
+        "jsCode": "const dados = $input.item.json.dados_inteligencia || {};\nconst mensagem = $('Set mensagens1').first().json.mensagem.toLowerCase();\n\nconst historico = dados.historico || [];\nconst categorias = dados.categorias || [];\nconst centros = dados.centros || [];\n\n// Map auxiliar para resolver nome da categoria DRE de cada cost_center\nconst categoriasMap = new Map(categorias.map(c => [c.id, c.name]));\n\n// --- PALAVRAS CHAVE (Fallback) ---\nconst palavrasChave = {\n  combustivel: ['gasolina', 'diesel', 'posto', 'abastecimento'],\n  pessoal: ['plantonista', 'plantão', 'salário', 'funcionário'],\n  medicamentos: ['vacina', 'medicamento', 'farmácia', 'drogaria'],\n  servicos: ['contador', 'limpeza', 'manutenção', 'marketing'],\n  utilidades: ['luz', 'energia', 'agua', 'internet', 'telefone']\n};\n\n// --- PONTUAÇÃO (continua usando categorias para inferência semântica) ---\nconst candidatos = categorias.map(cat => {\n    let pontos = 0;\n    let razoes = [];\n\n    if (mensagem.includes(cat.name.toLowerCase())) {\n        pontos += 2000;\n        razoes.push(`Você citou a categoria '${cat.name}'`);\n    }\n\n    const matchHist = historico.find(h => h.category_id === cat.id);\n    if (matchHist) {\n        if (matchHist.fornecedor_encontrado) {\n             pontos += 500 + (matchHist.frequencia * 10);\n             razoes.push(`Padrão do fornecedor ${matchHist.fornecedor_encontrado}`);\n        } else {\n             pontos += 100;\n             razoes.push(`Histórico similar encontrado`);\n        }\n    }\n\n    for (const [key, words] of Object.entries(palavrasChave)) {\n        if (words.some(w => mensagem.includes(w))) {\n            if (cat.name.toLowerCase().includes(key)) {\n                pontos += 50;\n                razoes.push(`Palavra-chave: ${key}`);\n            }\n        }\n    }\n\n    return { ...cat, pontos, razoes };\n});\n\ncandidatos.sort((a, b) => b.pontos - a.pontos);\nconst vencedor = candidatos[0];\n\nlet decisao = {\n    aprovado: false,\n    categoria: null,\n    centro_custo: null,\n    razao: \"Incerteza\",\n    alternativas: []\n};\n\nif (vencedor && vencedor.pontos >= 150) {\n    decisao.aprovado = true;\n    decisao.categoria = vencedor;\n    decisao.razao = vencedor.razoes.join(', ');\n    const histVencedor = historico.find(h => h.category_id === vencedor.id);\n    if (histVencedor && histVencedor.cost_center_id) {\n        decisao.centro_custo = centros.find(c => c.id === histVencedor.cost_center_id);\n    }\n} else {\n    decisao.alternativas = candidatos.slice(0, 3).map(c => `- ${c.name} (ID: ${c.id})`);\n}\n\nlet dadosOriginais = {};\ntry { dadosOriginais = $('Set mensagens1').first().json; } catch(e) {}\n\n// Versão completa: cada centro com sua categoria DRE expandida (modo confirmação)\nconst centrosFull = centros.map(c => {\n    const categoriaNome = categoriasMap.get(c.default_category_id) || '???';\n    return `- ${c.name}\\n    cost_center_id: ${c.id}\\n    pertence à categoria DRE: \"${categoriaNome}\"`;\n}).join('\\n');\n\n// Versão compacta: 1 linha por centro (modo automático — economiza ~3k tokens)\nconst centrosCompact = centros.map(c => {\n    const categoriaNome = categoriasMap.get(c.default_category_id) || '???';\n    return `- ${c.name} → ${categoriaNome} (cost_center_id: ${c.id})`;\n}).join('\\n');\n\nconst categoriasFull = categorias.map(c => {\n    const parts = [];\n    if (c.grandparent_name) parts.push(c.grandparent_name);\n    if (c.parent_name) parts.push(c.parent_name);\n    parts.push(c.name);\n    return `- ${parts.join(' > ')}`;\n}).join('\\n');\n\nlet promptContexto;\nif (decisao.aprovado) {\n    // Motor confiante: contexto enxuto\n    const cat = decisao.categoria;\n    const caminhoDRE = cat ? [cat.grandparent_name, cat.parent_name, cat.name].filter(Boolean).join(' > ') : '—';\n    promptContexto = `\n📦 **DECISÃO DO MOTOR DE INTELIGÊNCIA**\n\n✅ MODO AUTOMÁTICO ATIVADO\n\n**Dados da Inferência:**\n- Categoria Sugerida: ${cat?.name || \"—\"}\n- Caminho DRE: ${caminhoDRE}\n- Centro de Custo Sugerido: ${decisao.centro_custo?.name || \"—\"} ${decisao.centro_custo ? `(cost_center_id: ${decisao.centro_custo.id})` : \"\"}\n- Motivo: ${decisao.razao}\n\n---\n\n🎯 **CENTROS OPERACIONAIS** (lista compacta — escolha UM cost_center_id; category_id é derivado automaticamente):\n\n${centrosCompact}\n`;\n} else {\n    // Motor em dúvida: contexto completo\n    promptContexto = `\n📦 **DECISÃO DO MOTOR DE INTELIGÊNCIA**\n\n⚠️ MODO DE CONFIRMAÇÃO\n\n**Dados da Inferência:**\n- Categoria Sugerida: ${decisao.categoria?.name || \"—\"}\n- Centro de Custo Sugerido: ${decisao.centro_custo?.name || \"—\"} ${decisao.centro_custo ? `(cost_center_id: ${decisao.centro_custo.id})` : \"\"}\n- Motivo: ${decisao.razao}\n\n**Alternativas de categoria:**\n${decisao.alternativas.join('\\n')}\n\n---\n\n🎯 **CENTROS OPERACIONAIS** (a Lu escolhe UM cost_center_id desta lista; o category_id é derivado automaticamente):\n\n${centrosFull}\n\n---\n\n📊 **Categorias DRE** (apenas referência — você NÃO precisa escolher manualmente; vem do cost_center. Use este caminho ao mostrar a categoria na resposta):\n${categoriasFull}\n`;\n}\n\nreturn { \n    json: { \n        ...dadosOriginais,\n        contexto_financeiro: promptContexto,\n        inferencia: decisao \n    } \n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        64,
+        368
+      ],
+      "id": "4fb74fad-f6fd-4846-9dce-4050c5a2554a",
+      "name": "Formatar Contexto Financeiro"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- MOTOR INTELIGENTE V3 (Com Detecção de Fornecedor)\nWITH fornecedor_detectado AS (\n    -- 1. Varre a tabela de fornecedores para ver se algum nome aparece na mensagem do usuário\n    SELECT id, name\n    FROM suppliers\n    WHERE org_id = $1\n      AND LENGTH(name) > 2 -- Evita match com nomes curtos demais\n      AND $2 ILIKE '%' || name || '%' -- O segredo: Verifica se o NOME está na MENSAGEM\n    LIMIT 1\n),\n\nhistorico AS (\n    SELECT \n        c.id as category_id,\n        c.name as category_name,\n        c.type as category_type,\n        cc.id as cost_center_id,\n        cc.name as cost_center_name,\n        f.name as fornecedor_encontrado,\n        COUNT(*) as frequencia\n    FROM transactions t\n    JOIN categories c ON t.category_id = c.id\n    LEFT JOIN cost_centers cc ON t.cost_center_id = cc.id\n    LEFT JOIN fornecedor_detectado f ON t.supplier_id = f.id\n    WHERE t.org_id = $1\n      AND (\n          -- Busca histórico desse fornecedor (se detectado)\n          t.supplier_id = (SELECT id FROM fornecedor_detectado)\n          OR \n          -- OU busca por palavras similares na descrição (Fallback)\n          t.description ILIKE '%' || SPLIT_PART($2, ' ', 1) || '%'\n      )\n      AND t.created_at > NOW() - INTERVAL '180 days'\n    GROUP BY c.id, c.name, c.type, cc.id, cc.name, f.name\n    ORDER BY frequencia DESC\n    LIMIT 3\n),\n\ntodas_categorias AS (\n    SELECT c.id, c.name, c.type, c.is_group, c.is_active,\n           c.parent_id, p.name AS parent_name,\n           p.parent_id AS grandparent_id, gp.name AS grandparent_name\n    FROM categories c\n    LEFT JOIN categories p ON p.id = c.parent_id\n    LEFT JOIN categories gp ON gp.id = p.parent_id\n    WHERE c.org_id = $1 AND c.is_active = true AND c.is_group = false\n),\n\ntodos_centros AS (\n    SELECT id, name, dre_category_id as default_category_id FROM cost_centers WHERE org_id = $1 AND is_active = true\n)\n\nSELECT json_build_object(\n    'historico', (SELECT json_agg(row_to_json(historico.*)) FROM historico),\n    'categorias', (SELECT json_agg(row_to_json(todas_categorias.*)) FROM todas_categorias),\n    'centros', (SELECT json_agg(row_to_json(todos_centros.*)) FROM todos_centros)\n) as dados_inteligencia;",
+        "options": {
+          "queryReplacement": "={{ $('Set mensagens1').first().json.org_id }}, {{ $('Set mensagens1').first().json.mensagem }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -160,
+        368
+      ],
+      "id": "26d6ab0e-5aaf-447f-a8db-bda4b8d223f9",
+      "name": "Motor de Inteligência SQL",
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use para EDITAR uma transação existente. Requer o 'code' numérico (ex: 1005). Passe apenas os campos que o usuário deseja mudar.",
+        "method": "PATCH",
+        "url": "=https://knoxfwkofxxyycehcwag.supabase.co/rest/v1/transactions?code=eq.{{ $fromAI('code', 'Número do lançamento, ex: 1005', 'number') }}&org_id=eq.{{ $('Set mensagens1').item.json.org_id }}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
+            },
+            {
+              "name": "apikey",
+              "valueProvider": "fieldValue",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
+            },
+            {
+              "name": "Content-Type",
+              "valueProvider": "fieldValue",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "valueProvider": "fieldValue",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"description\": \"{{ $fromAI('description', 'Nova descrição se houver', 'string') }}\",\n  \"amount\": {{ $fromAI('amount', 'Novo valor numérico se houver', 'number') }},\n  \"status\": \"{{ $fromAI('status', 'PAID ou PENDING', 'string') }}\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        2016,
+        592
+      ],
+      "id": "314a58d2-cea3-4764-b2aa-df6371945cfd",
+      "name": "Editar_Transacao_API"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use para EXCLUIR permanentemente uma transação. Requer o 'code' numérico (ex: 1005). SEMPRE peça confirmação do usuário antes de usar esta ferramenta.",
+        "method": "DELETE",
+        "url": "=https://knoxfwkofxxyycehcwag.supabase.co/rest/v1/transactions?code=eq.{{ $fromAI('code', 'Número do lançamento a excluir, ex: 1005', 'number') }}&org_id=eq.{{ $('Set mensagens1').item.json.org_id }}",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
+            },
+            {
+              "name": "apikey",
+              "valueProvider": "fieldValue",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
+            },
+            {
+              "name": "Content-Type",
+              "valueProvider": "fieldValue",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        2192,
+        592
+      ],
+      "id": "920de358-5632-41d4-bed0-1df72aefa049",
+      "name": "Excluir_Transacao_API"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use para visualizar as últimas 10 transações. Ajuda a Lu a confirmar códigos (#) e descrições antes de editar.",
+        "url": "=https://knoxfwkofxxyycehcwag.supabase.co/rest/v1/transactions?org_id=eq.{{ $('Set mensagens1').item.json.org_id }}&select=code,description,amount,status,date&order=code.desc&limit=10",
+        "sendHeaders": true,
+        "parametersHeaders": {
+          "values": [
+            {
+              "name": "Authorization",
+              "valueProvider": "fieldValue",
+              "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
+            },
+            {
+              "name": "apikey",
+              "valueProvider": "fieldValue",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtub3hmd2tvZnh4eXljZWhjd2FnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzY2NzU3MSwiZXhwIjoyMDkzMjQzNTcxfQ.yb4wq_EReGqV7WsLvp-gMHJXqAONe6sqnEMgXwHSxbI"
+            },
+            {
+              "name": "Content-Type",
+              "valueProvider": "fieldValue",
+              "value": "application/json"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1856,
+        592
+      ],
+      "id": "33a3bae6-da1f-4080-9f9e-dba70cb2e815",
+      "name": "Listar_Transacoes_recentes"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "n8n_ai_audit_logs",
+          "mode": "list"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "org_id": "={{ $('Set mensagens1').first().json.org_id }}",
+            "telefone": "={{ $('Info').first().json.telefone }}",
+            "input_usuario": "={{ $('Filtro Mensagens').first().json.mensagem }}",
+            "output_agente": "={{ $json.output }}",
+            "metadata": "={{ JSON.stringify($json.responseMetadata || {}) }}"
+          },
+          "schema": [
+            {
+              "id": "org_id",
+              "displayName": "org_id",
+              "type": "string"
+            },
+            {
+              "id": "telefone",
+              "displayName": "telefone",
+              "type": "string"
+            },
+            {
+              "id": "input_usuario",
+              "displayName": "input_usuario",
+              "type": "string"
+            },
+            {
+              "id": "output_agente",
+              "displayName": "output_agente",
+              "type": "string"
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2640,
+        320
+      ],
+      "id": "e3e922d2-cd76-42d5-b135-8b748943d8b1",
+      "name": "Log de Auditoria IA",
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Explode body.attachments[] em N items, um por anexo, replicando o body.\n// Mensagens sem anexos passam adiante intactas (1 item).\nconst item = $input.item.json;\nconst body = item.body || {};\nconst attachments = Array.isArray(body.attachments) ? body.attachments : [];\n\nif (attachments.length <= 1) {\n  // 0 ou 1 anexo: passa intacto (preserva semântica original)\n  return [{ json: { ...item, _attachment_index: 0, _attachment_total: attachments.length || 0 } }];\n}\n\n// Múltiplos anexos: cria 1 item por anexo, mantendo body.attachments=[anexo_n]\nreturn attachments.map((att, idx) => ({\n  json: {\n    ...item,\n    body: { ...body, attachments: [att] },\n    _attachment_index: idx,\n    _attachment_total: attachments.length,\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3648,
+        1392
+      ],
+      "id": "ea51d0b2-5a1c-4f3e-9c2d-explodir0001",
+      "name": "Explodir Attachments"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE phone_to_org SET chatwoot_conversation_id = {{ $json.body.conversation.id }} WHERE REGEXP_REPLACE(phone_number,'\\D','','g') = REGEXP_REPLACE('{{ $json.body.sender.phone_number }}','\\D','','g')",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3744,
+        1600
+      ],
+      "id": "a1b2c3d4-e5f6-7890-abcd-salvaridconv01",
+      "name": "Salvar ID Conversa",
+      "credentials": {
+        "postgres": {
+          "id": "LsDwmDD5dQo4xD48",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Mensagem chegando?": {
+      "main": [
+        [
+          {
+            "node": "Tipo de mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem recebida": {
+      "main": [
+        [
+          {
+            "node": "Explodir Attachments",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Salvar ID Conversa",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar mensagens": {
+      "main": [
+        [
+          {
+            "node": "Limpar fila de mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limpar fila de mensagens": {
+      "main": [
+        [
+          {
+            "node": "Norm. Texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esperar": {
+      "main": [
+        [
+          {
+            "node": "Buscar mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo de mensagem": {
+      "main": [
+        [
+          {
+            "node": "Enfileirar mensagem.",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download áudio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Documento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Documento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enfileirar mensagem.": {
+      "main": [
+        [
+          {
+            "node": "Esperar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar como lidas": {
+      "main": [
+        [
+          {
+            "node": "Digitando/Gravando...",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download áudio": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcrever audio": {
+      "main": [
+        [
+          {
+            "node": "Norm. Áudio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Transcrever audio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resetar status": {
+      "main": [
+        []
+      ]
+    },
+    "Info": {
+      "main": [
+        [
+          {
+            "node": "Mensagem chegando?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Documento": {
+      "main": [
+        [
+          {
+            "node": "Detectar tipo de arquivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar tipo de arquivo": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Norm. Imagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Org ID": {
+      "main": [
+        [
+          {
+            "node": "Set mensagens1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Digitando/Gravando...": {
+      "main": [
+        [
+          {
+            "node": "Buscar Org ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refletir": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Categorias DRE": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar novo fornecedor": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar novo lançamento": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Centro de Custo": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fornecedores": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reagir Mensagem Whatspp": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reagir Leo": {
+      "ai_tool": [
+        [
+          {
+            "node": "Léo - Vendas",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Léo - Vendas": {
+      "main": [
+        [
+          {
+            "node": "Quebrar Mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refletir Léo": {
+      "ai_tool": [
+        [
+          {
+            "node": "Léo - Vendas",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT - Léo": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Léo - Vendas",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory - Léo": {
+      "ai_memory": [
+        [
+          {
+            "node": "Léo - Vendas",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TESTE LÉO - Gerar ID Aleatório": {
+      "main": [
+        [
+          {
+            "node": "TESTE LÉO - Escrever Mensagem Teste",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TESTE LÉO - Escrever Mensagem Teste": {
+      "main": [
+        []
+      ]
+    },
+    "Responder (Léo)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quebrar Mensagens": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Limpar fila de mensagens1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Responder (Léo)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asaas - Cadastrar Cliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "Léo - Vendas",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asaas - Criar Assinatura": {
+      "ai_tool": [
+        [
+          {
+            "node": "Léo - Vendas",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mensagem encavalada?": {
+      "main": [
+        []
+      ]
+    },
+    "Botão de Teste Manual": {
+      "main": [
+        [
+          {
+            "node": "Simular Chatwoot (Dados Fakes)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simular Chatwoot (Dados Fakes)": {
+      "main": [
+        []
+      ]
+    },
+    "Preparar Trial": {
+      "main": [
+        [
+          {
+            "node": "Filtro Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Extrair Dados (JS)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extrair Dados (JS)": {
+      "main": [
+        [
+          {
+            "node": "Apenas Mensagem",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apenas Mensagem": {
+      "main": [
+        [
+          {
+            "node": "Léo - Vendas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Conta Trial": {
+      "ai_tool": [
+        [
+          {
+            "node": "Léo - Vendas",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Norm. Áudio": {
+      "main": [
+        [
+          {
+            "node": "Filtro Mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Norm. Imagem": {
+      "main": [
+        [
+          {
+            "node": "Filtro Mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secretária": {
+      "main": [
+        [
+          {
+            "node": "Resetar status",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Quebrar Mensagens (Lu)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log de Auditoria IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtro Mensagens": {
+      "main": [
+        [
+          {
+            "node": "Marcar como lidas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set mensagens1": {
+      "main": [
+        [
+          {
+            "node": "Roteamento por Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Norm. Texto": {
+      "main": [
+        [
+          {
+            "node": "Filtro Mensagens",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Roteamento por Status": {
+      "main": [
+        [
+          {
+            "node": "Motor de Inteligência SQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [
+          {
+            "node": "Preparar Trial",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Resposta": {
+      "main": [
+        [
+          {
+            "node": "Limpar fila de mensagens2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait Lu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Lu": {
+      "main": [
+        [
+          {
+            "node": "Responder usuário (Loop)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Responder usuário (Loop)": {
+      "main": [
+        [
+          {
+            "node": "Loop Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Quebrar Mensagens (Lu)": {
+      "main": [
+        [
+          {
+            "node": "Loop Resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatar Contexto Financeiro": {
+      "main": [
+        [
+          {
+            "node": "Secretária",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Motor de Inteligência SQL": {
+      "main": [
+        [
+          {
+            "node": "Formatar Contexto Financeiro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Editar_Transacao_API": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Excluir_Transacao_API": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Listar_Transacoes_recentes": {
+      "ai_tool": [
+        [
+          {
+            "node": "Secretária",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explodir Attachments": {
+      "main": [
+        [
+          {
+            "node": "Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "0d9a9c0abf4197c3a6a0d07da99221ba39f5016890e60b2a11074995231676af"
+  }
+}
