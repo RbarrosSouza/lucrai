@@ -22,8 +22,11 @@ export function CostCenterConfiguration() {
     setLoading(true);
     try {
       const [ccRes, catRes] = await Promise.all([
-        supabase.from('cost_centers').select('*'),
-        supabase.from('categories').select('id,name,type,is_active,include_in_dre,is_group,parent_id,sort_order'),
+        supabase.from('cost_centers').select('*').range(0, 19999),
+        supabase
+          .from('categories')
+          .select('id,name,type,is_active,include_in_dre,is_group,parent_id,sort_order')
+          .range(0, 19999),
       ]);
 
       if (ccRes.error) throw ccRes.error;
