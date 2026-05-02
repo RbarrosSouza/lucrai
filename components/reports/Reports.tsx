@@ -6,6 +6,8 @@ import { ReportType } from '../../types';
 import { DrilldownModal } from './DrilldownModal';
 import { useReportsData } from './useReportsData';
 import { formatDateBR, formatDateBRShort, weekdayShortBR } from '../../services/dates';
+import DRECardList, { type DREMetrics } from './DRECardList';
+import CashFlowDailyCardList, { type DailyCashFlowEntry } from './CashFlowDailyCardList';
 import {
   ReportBasis,
   basisAppliesToTransaction,
@@ -170,7 +172,7 @@ export default function Reports() {
     </tr>
   );
 
-  const renderDRETable = (basis: ReportBasis) => {
+  const computeDREMetrics = (basis: ReportBasis) => {
     const catReceita = findRootByName(roots, 'Receita Bruta');
     const catDeducoes = findRootByName(roots, 'Deduções sobre Vendas');
     const catVariaveis = findRootByName(roots, 'Custos Variáveis');
@@ -178,31 +180,71 @@ export default function Reports() {
     const catNaoOp = findRootByName(roots, 'Resultado Não Operacional');
     const catImpostosLucro = findRootByName(roots, 'Imposto de Renda e CSLL');
 
-    const valReceitaBruta = catReceita ? Math.max(0, getCategorySignedTotal(catReceita.id, basis)) : 0;
-    const valDeducoesAbs = catDeducoes ? getCategoryAbsTotal(catDeducoes.id, basis) : 0;
-    const valVariaveisAbs = catVariaveis ? getCategoryAbsTotal(catVariaveis.id, basis) : 0;
-    const valFixosAbs = catFixos ? getCategoryAbsTotal(catFixos.id, basis) : 0;
-    const valNaoOpNet = catNaoOp ? getCategorySignedTotal(catNaoOp.id, basis) : 0;
-    const valImpostosAbs = catImpostosLucro ? getCategoryAbsTotal(catImpostosLucro.id, basis) : 0;
+    const receitaBruta = catReceita ? Math.max(0, getCategorySignedTotal(catReceita.id, basis)) : 0;
+    const deducoesAbs = catDeducoes ? getCategoryAbsTotal(catDeducoes.id, basis) : 0;
+    const variaveisAbs = catVariaveis ? getCategoryAbsTotal(catVariaveis.id, basis) : 0;
+    const fixosAbs = catFixos ? getCategoryAbsTotal(catFixos.id, basis) : 0;
+    const naoOpNet = catNaoOp ? getCategorySignedTotal(catNaoOp.id, basis) : 0;
+    const impostosAbs = catImpostosLucro ? getCategoryAbsTotal(catImpostosLucro.id, basis) : 0;
 
-    const valReceitaLiquida = valReceitaBruta - valDeducoesAbs;
-    const pctReceitaLiquida = valReceitaBruta ? (valReceitaLiquida / valReceitaBruta) * 100 : 0;
+    const receitaLiquida = receitaBruta - deducoesAbs;
+    const margemContribuicao = receitaLiquida - variaveisAbs;
+    const resOperacional = margemContribuicao - fixosAbs;
+    const LAIR = resOperacional + naoOpNet;
+    const lucroLiquido = LAIR - impostosAbs;
 
-    const valMargemContribuicao = valReceitaLiquida - valVariaveisAbs;
-    const pctMargemContribuicao = valReceitaBruta ? (valMargemContribuicao / valReceitaBruta) * 100 : 0;
+    const pct = (val: number) => (receitaBruta ? (val / receitaBruta) * 100 : 0);
 
-    const valResOperacional = valMargemContribuicao - valFixosAbs;
-    const pctResOperacional = valReceitaBruta ? (valResOperacional / valReceitaBruta) * 100 : 0;
+    const metrics: DREMetrics = {
+      receitaBruta,
+      deducoesAbs,
+      variaveisAbs,
+      fixosAbs,
+      naoOpNet,
+      impostosAbs,
+      receitaLiquida,
+      margemContribuicao,
+      resOperacional,
+      LAIR,
+      lucroLiquido,
+      pctReceitaLiquida: pct(receitaLiquida),
+      pctMargemContribuicao: pct(margemContribuicao),
+      pctResOperacional: pct(resOperacional),
+      pctLAIR: pct(LAIR),
+      pctLucroLiquido: pct(lucroLiquido),
+    };
 
-    const valLAIR = valResOperacional + valNaoOpNet;
-    const pctLAIR = valReceitaBruta ? (valLAIR / valReceitaBruta) * 100 : 0;
+    return { catReceita, catDeducoes, catVariaveis, catFixos, catNaoOp, catImpostosLucro, metrics };
+  };
 
-    const valLucroLiquido = valLAIR - valImpostosAbs;
-    const pctLucroLiquido = valReceitaBruta ? (valLucroLiquido / valReceitaBruta) * 100 : 0;
+  const renderDRETable = (basis: ReportBasis) => {
+    const { catReceita, catDeducoes, catVariaveis, catFixos, catNaoOp, catImpostosLucro, metrics } =
+      computeDREMetrics(basis);
 
     return (
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
+      <>
+        <div className="md:hidden">
+          <DRECardList
+            basis={basis}
+            catReceita={catReceita}
+            catDeducoes={catDeducoes}
+            catVariaveis={catVariaveis}
+            catFixos={catFixos}
+            catNaoOp={catNaoOp}
+            catImpostosLucro={catImpostosLucro}
+            metrics={metrics}
+            childrenIndex={childrenIndex}
+            expandedCategories={expandedCategories}
+            toggleCategory={toggleCategory}
+            getCategorySignedTotal={getCategorySignedTotal}
+            getCategoryAbsTotal={getCategoryAbsTotal}
+            getDrilldownTransactions={getDrilldownTransactions}
+            handleOpenDrilldown={handleOpenDrilldown}
+            formatMoney={formatMoney}
+          />
+        </div>
+        <div className="hidden md:block overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Descrição</th>
@@ -213,44 +255,43 @@ export default function Reports() {
           <tbody className="bg-white divide-y divide-gray-100">
             {catReceita && renderCategoryRow(catReceita, basis, 0, 'PLUS')}
             {catDeducoes && renderCategoryRow(catDeducoes, basis, 0, 'MINUS')}
-            {renderResultLine('Receita Líquida', valReceitaLiquida, pctReceitaLiquida, 'text-lucrai-700')}
+            {renderResultLine('Receita Líquida', metrics.receitaLiquida, metrics.pctReceitaLiquida, 'text-lucrai-700')}
 
             {catVariaveis && renderCategoryRow(catVariaveis, basis, 0, 'MINUS')}
-            {renderResultLine('Margem de Contribuição', valMargemContribuicao, pctMargemContribuicao, 'text-lucrai-700')}
+            {renderResultLine('Margem de Contribuição', metrics.margemContribuicao, metrics.pctMargemContribuicao, 'text-lucrai-700')}
 
             {catFixos && renderCategoryRow(catFixos, basis, 0, 'MINUS')}
             {renderResultLine(
               'Resultado Operacional',
-              valResOperacional,
-              pctResOperacional,
+              metrics.resOperacional,
+              metrics.pctResOperacional,
               'text-gray-900'
             )}
 
             {catNaoOp ? (
-              <>
-                <tr className="bg-gray-50/50 font-medium">
-                  <td className="px-6 py-2 text-sm text-gray-900">(+/-) Resultado Não Operacional</td>
-                  <td className="px-6 py-2 text-sm text-right text-gray-900">
-                    {formatMoney(valNaoOpNet)}
-                  </td>
-                  <td className="px-6 py-2 text-sm text-right text-gray-400">-</td>
-                </tr>
-              </>
+              <tr className="bg-gray-50/50 font-medium">
+                <td className="px-6 py-2 text-sm text-gray-900">(+/-) Resultado Não Operacional</td>
+                <td className="px-6 py-2 text-sm text-right text-gray-900">
+                  {formatMoney(metrics.naoOpNet)}
+                </td>
+                <td className="px-6 py-2 text-sm text-right text-gray-400">-</td>
+              </tr>
             ) : null}
 
-            {renderResultLine('Lucro Antes do IR (LAIR)', valLAIR, pctLAIR, 'text-gray-900')}
+            {renderResultLine('Lucro Antes do IR (LAIR)', metrics.LAIR, metrics.pctLAIR, 'text-gray-900')}
             {catImpostosLucro && renderCategoryRow(catImpostosLucro, basis, 0, 'MINUS')}
 
             <tr className="text-white font-bold text-lg bg-lucrai-500">
               <td className="px-6 py-4">(=) {basis === 'CASH' ? 'Geração de Caixa Líquida' : 'Lucro Líquido'}</td>
-              <td className={`px-6 py-4 text-right ${valLucroLiquido >= 0 ? 'text-white' : 'text-rose-100'}`}>
-                {formatMoney(valLucroLiquido)}
+              <td className={`px-6 py-4 text-right ${metrics.lucroLiquido >= 0 ? 'text-white' : 'text-rose-100'}`}>
+                {formatMoney(metrics.lucroLiquido)}
               </td>
-              <td className="px-6 py-4 text-right text-white/80">{pctLucroLiquido.toFixed(1)}%</td>
+              <td className="px-6 py-4 text-right text-white/80">{metrics.pctLucroLiquido.toFixed(1)}%</td>
             </tr>
           </tbody>
         </table>
-      </div>
+        </div>
+      </>
     );
   };
 
@@ -276,51 +317,62 @@ export default function Reports() {
     }
 
     let running = 0;
+    const entries: DailyCashFlowEntry[] = days.map((day) => {
+      const d = byDay.get(day)!;
+      const daily = d.in - d.out;
+      running += daily;
+      return { day, in: d.in, out: d.out, daily, running, txs: d.txs };
+    });
+
     return (
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Data</th>
-              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Entradas</th>
-              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saídas</th>
-              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo do Dia</th>
-              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo Acumulado</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-100">
-            {days.map((day) => {
-              const d = byDay.get(day)!;
-              const daily = d.in - d.out;
-              running += daily;
-              return (
+      <>
+        <div className="md:hidden">
+          <CashFlowDailyCardList
+            entries={entries}
+            formatMoney={formatMoney}
+            handleOpenDrilldown={handleOpenDrilldown}
+          />
+        </div>
+        <div className="hidden md:block overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Data</th>
+                <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Entradas</th>
+                <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saídas</th>
+                <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo do Dia</th>
+                <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo Acumulado</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-100">
+              {entries.map((e) => (
                 <tr
-                  key={day}
+                  key={e.day}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => handleOpenDrilldown(`Movimentações de ${formatDateBR(day)}`, d.txs)}
+                  onClick={() => handleOpenDrilldown(`Movimentações de ${formatDateBR(e.day)}`, e.txs)}
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                    {formatDateBRShort(day)}{' '}
-                    <span className="text-gray-400 text-xs">({weekdayShortBR(day)})</span>
+                    {formatDateBRShort(e.day)}{' '}
+                    <span className="text-gray-400 text-xs">({weekdayShortBR(e.day)})</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-lucrai-700">
-                    {d.in > 0 ? formatMoney(d.in) : '-'}
+                    {e.in > 0 ? formatMoney(e.in) : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700">
-                    {d.out > 0 ? `- ${formatMoney(d.out)}` : '-'}
+                    {e.out > 0 ? `- ${formatMoney(e.out)}` : '-'}
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${daily >= 0 ? 'text-gray-900' : 'text-gray-700'}`}>
-                    {formatMoney(daily)}
+                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${e.daily >= 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+                    {formatMoney(e.daily)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 font-bold bg-gray-50/50">
-                    {formatMoney(running)}
+                    {formatMoney(e.running)}
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </>
     );
   };
 
