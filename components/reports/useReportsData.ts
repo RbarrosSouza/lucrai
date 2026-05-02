@@ -3,7 +3,7 @@ import type { Category, Transaction } from '../../types';
 import { TransactionStatus } from '../../types';
 import { supabase } from '../../services/supabaseClient';
 import { formatSupabaseError } from '../../services/formatSupabaseError';
-import { getMonthDateRange } from './reporting';
+import { dedupCategories, getMonthDateRange, remapTransactionCategoryIds } from './reporting';
 
 type LoadState = {
   categories: Category[];
@@ -81,10 +81,15 @@ export function useReportsData(selectedMonth: string) {
 
       try {
         const [catRes, accrualRes, cashRes] = await Promise.all([
+          // .range(0, 19999) — sobrescreve o limite default do PostgREST (1000 rows).
+          // Sem isso, orgs com plano de contas grande (ex: PamVet com 3776+ categorias por seed
+          // duplicado) recebiam só 1000 categorias e o dedup ficava com cadeia quebrada,
+          // resultando em DRE zerada.
           supabase
             .from('categories')
             .select('id,name,type,is_active,include_in_dre,is_group,parent_id,sort_order')
-            .order('sort_order', { ascending: true }),
+            .order('sort_order', { ascending: true })
+            .range(0, 19999),
           supabase
             .from('transactions')
             .select('*')
@@ -103,9 +108,16 @@ export function useReportsData(selectedMonth: string) {
         if (accrualRes.error) throw accrualRes.error;
         if (cashRes.error) throw cashRes.error;
 
-        const nextCategories = (catRes.data ?? []).map(mapDbCategory);
-        const nextAccrual = (accrualRes.data ?? []).map(mapDbTransaction);
-        const nextCash = (cashRes.data ?? []).map(mapDbTransaction);
+        const rawCategories = (catRes.data ?? []).map(mapDbCategory);
+        const rawAccrual = (accrualRes.data ?? []).map(mapDbTransaction);
+        const rawCash = (cashRes.data ?? []).map(mapDbTransaction);
+
+        // Dedup do plano de contas em memória — funde duplicatas (mesmo nome + mesmo pai canônico)
+        // e remapeia categoryId das transações pro id canônico. Sem isso, a DRE renderiza
+        // 45 cópias de "Custos Variáveis" e a propagação de valores cai numa só.
+        const { deduped: nextCategories, idMap } = dedupCategories(rawCategories);
+        const nextAccrual = remapTransactionCategoryIds(rawAccrual, idMap);
+        const nextCash = remapTransactionCategoryIds(rawCash, idMap);
 
         // Se não existir plano de contas ainda, tenta seed automaticamente (1x por sessão).
         if (nextCategories.length === 0 && !seedAttemptedRef.current) {
@@ -116,12 +128,15 @@ export function useReportsData(selectedMonth: string) {
             const cat2 = await supabase
               .from('categories')
               .select('id,name,type,is_active,include_in_dre,is_group,parent_id,sort_order')
-              .order('sort_order', { ascending: true });
+              .order('sort_order', { ascending: true })
+              .range(0, 19999);
             if (cat2.error) throw cat2.error;
+            const raw2 = (cat2.data ?? []).map(mapDbCategory);
+            const { deduped: cat2Deduped, idMap: idMap2 } = dedupCategories(raw2);
             setState({
-              categories: (cat2.data ?? []).map(mapDbCategory),
-              transactionsAccrual: nextAccrual,
-              transactionsCash: nextCash,
+              categories: cat2Deduped,
+              transactionsAccrual: remapTransactionCategoryIds(nextAccrual, idMap2),
+              transactionsCash: remapTransactionCategoryIds(nextCash, idMap2),
               isLoading: false,
               error: null,
             });

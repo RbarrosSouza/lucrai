@@ -18,9 +18,13 @@ import {
 
 type CashFlowViewMode = 'DAILY' | 'DRE_STYLE';
 
-function findRootByName(roots: Category[], label: string): Category | undefined {
-  const needle = normalizeLabel(label);
-  return roots.find((c) => normalizeLabel(c.name) === needle);
+// Procura uma raiz da DRE por uma lista de aliases (acento/caixa-insensitive).
+// Necessário porque o seed da DRE evoluiu ao longo do tempo: orgs antigas têm
+// "Receita Bruta" / "Imposto de Renda e CSLL", orgs reconstruídas no Supabase
+// novo têm "Receita com Vendas" / "Impostos sobre o Lucro".
+function findRootByAliases(roots: Category[], aliases: string[]): Category | undefined {
+  const needles = new Set(aliases.map(normalizeLabel));
+  return roots.find((c) => needles.has(normalizeLabel(c.name)));
 }
 
 export default function Reports() {
@@ -171,12 +175,12 @@ export default function Reports() {
   );
 
   const renderDRETable = (basis: ReportBasis) => {
-    const catReceita = findRootByName(roots, 'Receita Bruta');
-    const catDeducoes = findRootByName(roots, 'Deduções sobre Vendas');
-    const catVariaveis = findRootByName(roots, 'Custos Variáveis');
-    const catFixos = findRootByName(roots, 'Custos Fixos');
-    const catNaoOp = findRootByName(roots, 'Resultado Não Operacional');
-    const catImpostosLucro = findRootByName(roots, 'Imposto de Renda e CSLL');
+    const catReceita = findRootByAliases(roots, ['Receita Bruta', 'Receita com Vendas', 'Receita Operacional Bruta']);
+    const catDeducoes = findRootByAliases(roots, ['Deduções sobre Vendas', 'Imposto sobre vendas', 'Outras Deduções']);
+    const catVariaveis = findRootByAliases(roots, ['Custos Variáveis']);
+    const catFixos = findRootByAliases(roots, ['Custos Fixos', 'Gastos com Pessoal', 'Despesas Administrativas', 'Despesas Operacionais']);
+    const catNaoOp = findRootByAliases(roots, ['Resultado Não Operacional', 'Receitas não Operacionais', 'Gastos não Operacionais']);
+    const catImpostosLucro = findRootByAliases(roots, ['Imposto de Renda e CSLL', 'Impostos sobre o Lucro', 'IR e CSLL']);
 
     const valReceitaBruta = catReceita ? Math.max(0, getCategorySignedTotal(catReceita.id, basis)) : 0;
     const valDeducoesAbs = catDeducoes ? getCategoryAbsTotal(catDeducoes.id, basis) : 0;
