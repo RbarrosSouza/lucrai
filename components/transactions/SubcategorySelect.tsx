@@ -1,118 +1,81 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 import type { Category, CostCenter } from '../../types';
-import { TransactionType } from '../../types';
-
-type Item = {
-  id: string;
-  label: string;
-  /** Caminho hierárquico compacto. Vazio quando seria redundante (igual ao label). */
-  breadcrumb: string;
-};
 
 function normalize(s: string) {
   return (s ?? '').trim().toLowerCase();
 }
 
-function buildItems(params: {
-  categories: Category[];
-  costCenters: CostCenter[];
-  type: TransactionType;
-  query: string;
-}): Item[] {
-  const { categories, costCenters, type, query } = params;
-
-  const activeCategories = categories.filter((c) => c.isActive);
-  const byId = new Map<string, Category>();
-  for (const c of activeCategories) byId.set(c.id, c);
-
-  // Resolve a raiz subindo pela cadeia de parent_id (proteção contra ciclo).
-  const getRoot = (cat: Category): Category => {
-    let cur: Category = cat;
-    const seen = new Set<string>();
-    while (cur.parentId) {
-      if (seen.has(cur.id)) break;
-      seen.add(cur.id);
-      const parent = byId.get(cur.parentId);
-      if (!parent) break;
-      cur = parent;
-    }
-    return cur;
-  };
-
-  const eligible = costCenters
-    .filter((cc) => cc.isActive)
-    .map((cc) => ({ cc, cat: byId.get(cc.dreCategoryId) }))
-    .filter((x): x is { cc: CostCenter; cat: Category } => !!x.cat && x.cat.type === type);
-
-  // Deduplicação visual: o seed pode duplicar centros (mesmo nome + mesma DRE-pai).
-  // Mantemos só o primeiro (sort por id pra estabilidade) — outros UUIDs órfãos
-  // continuam no banco e ainda resolvem ao editar transações antigas.
-  const seen = new Set<string>();
-  const deduped = eligible
-    .slice()
-    .sort((a, b) => a.cc.id.localeCompare(b.cc.id))
-    .filter(({ cc, cat }) => {
-      const key = `${cc.name}|${cat.name}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-
-  // Lista plana com breadcrumb compacto. Quando os 3 níveis (raiz, subcat, cc)
-  // colidem em nome, o breadcrumb fica vazio para evitar redundância visual.
-  const items: Item[] = deduped.map(({ cc, cat }) => {
-    const root = getRoot(cat);
-    const sameAsCc = (n: string) => normalize(n) === normalize(cc.name);
-    const parts: string[] = [];
-    if (!sameAsCc(root.name)) parts.push(root.name);
-    if (cat.id !== root.id && !sameAsCc(cat.name)) parts.push(cat.name);
-    return {
-      id: cc.id,
-      label: cc.name,
-      breadcrumb: parts.join(' › '),
-    };
-  });
-
-  items.sort(
-    (a, b) => a.breadcrumb.localeCompare(b.breadcrumb) || a.label.localeCompare(b.label)
-  );
-
-  const q = normalize(query);
-  if (!q) return items;
-  return items.filter((it) => normalize(`${it.label} ${it.breadcrumb}`).includes(q));
-}
-
-export function CostCenterSelect({
-  categories,
+export function SubcategorySelect({
+  leaves,
   costCenters,
-  type,
   value,
   onChange,
-  onOpen,
-  placeholder = 'Selecione um centro de custo',
+  placeholder = 'Sem subcategoria',
+  showCostCenter = false,
   disabled = false,
-  disabledHint,
 }: {
-  categories: Category[];
+  leaves: Category[];
   costCenters: CostCenter[];
-  type: TransactionType;
   value: string;
   onChange: (id: string) => void;
-  onOpen?: () => void;
   placeholder?: string;
+  /** Quando true, exibe "Folha (Centro de Custo)" para desambiguar folhas com mesmo nome em CCs diferentes */
+  showCostCenter?: boolean;
   disabled?: boolean;
-  disabledHint?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement | null>(null);
 
-  const selected = useMemo(() => costCenters.find((c) => c.id === value), [costCenters, value]);
-  const items = useMemo(
-    () => buildItems({ categories, costCenters, type, query }),
-    [categories, costCenters, type, query]
-  );
+  // Mapa parent_id (dre_category_id do CC) → nome do CC
+  const parentToCcName = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const cc of costCenters) {
+      if (!m.has(cc.dreCategoryId)) m.set(cc.dreCategoryId, cc.name);
+    }
+    return m;
+  }, [costCenters]);
+
+  // Lista enriquecida + dedup + filtrada por busca
+  const items = useMemo(() => {
+    const q = normalize(query);
+    const enriched = leaves.map((leaf) => {
+      const ccName = leaf.parentId ? parentToCcName.get(leaf.parentId) ?? '' : '';
+      return { leaf, ccName };
+    });
+    // Deduplicação: o seed pode duplicar folhas (mesmo nome + mesmo CC pai).
+    const sortedForDedup = enriched
+      .slice()
+      .sort((a, b) => a.leaf.id.localeCompare(b.leaf.id));
+    const seenKeys = new Set<string>();
+    const deduped: typeof enriched = [];
+    for (const item of sortedForDedup) {
+      const key = `${item.leaf.name}|${item.ccName}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      deduped.push(item);
+    }
+    const filtered = q
+      ? deduped.filter(({ leaf, ccName }) =>
+          normalize(`${leaf.name} ${ccName}`).includes(q)
+        )
+      : deduped;
+    filtered.sort((a, b) => {
+      const byCc = a.ccName.localeCompare(b.ccName);
+      if (byCc !== 0) return byCc;
+      return a.leaf.name.localeCompare(b.leaf.name);
+    });
+    return filtered;
+  }, [leaves, parentToCcName, query]);
+
+  const selected = useMemo(() => leaves.find((l) => l.id === value) || null, [leaves, value]);
+  const selectedCcName = selected?.parentId ? parentToCcName.get(selected.parentId) : undefined;
+  const selectedLabel = selected
+    ? showCostCenter && selectedCcName
+      ? `${selected.name} (${selectedCcName})`
+      : selected.name
+    : placeholder;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -138,7 +101,6 @@ export function CostCenterSelect({
     setQuery('');
   };
 
-  // Conteúdo compartilhado entre bottom-sheet (mobile) e popover (desktop).
   const renderHeader = () => (
     <div className="px-4 pt-3 pb-3 border-b border-gray-100 bg-white shrink-0">
       <div className="flex items-center gap-2">
@@ -147,7 +109,11 @@ export function CostCenterSelect({
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Procurar por nome, DRE ou subcategoria…"
+            placeholder={
+              showCostCenter
+                ? 'Procurar subcategoria ou centro…'
+                : 'Procurar subcategoria…'
+            }
             className="w-full pl-10 pr-9 py-2.5 text-[15px] bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-lucrai-200 outline-none"
             autoFocus
           />
@@ -178,8 +144,29 @@ export function CostCenterSelect({
     <div
       className="flex-1 overflow-auto overscroll-contain py-1"
       role="listbox"
-      aria-label="Centros de custo"
+      aria-label="Subcategorias"
     >
+      {/* Sem subcategoria */}
+      <button
+        type="button"
+        onClick={() => {
+          onChange('');
+          close();
+        }}
+        className={`w-full text-left px-4 py-3 sm:py-2.5 transition-colors border-l-[3px] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-lucrai-200 ${
+          !value ? 'border-l-lucrai-500 bg-lucrai-50' : 'border-l-transparent bg-white hover:bg-gray-50'
+        }`}
+        role="option"
+        aria-selected={!value}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <span className={`text-[15px] italic ${!value ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
+            {placeholder}
+          </span>
+          {!value && <Check size={16} className="text-lucrai-600 shrink-0" />}
+        </div>
+      </button>
+
       {items.length === 0 ? (
         <div className="px-4 py-10 text-center">
           {query ? (
@@ -196,17 +183,15 @@ export function CostCenterSelect({
               </button>
             </>
           ) : (
-            <div className="text-sm text-gray-500">
-              Nenhum centro de custo cadastrado.
-            </div>
+            <div className="text-sm text-gray-500">Nenhuma subcategoria disponível.</div>
           )}
         </div>
       ) : (
-        items.map((it) => {
-          const isSelected = it.id === value;
+        items.map(({ leaf, ccName }) => {
+          const isSelected = leaf.id === value;
           return (
             <button
-              key={it.id}
+              key={leaf.id}
               type="button"
               className={`w-full text-left px-4 py-3 sm:py-2.5 transition-colors border-l-[3px] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-lucrai-200 ${
                 isSelected
@@ -214,7 +199,7 @@ export function CostCenterSelect({
                   : 'border-l-transparent bg-white hover:bg-gray-50'
               }`}
               onClick={() => {
-                onChange(it.id);
+                onChange(leaf.id);
                 close();
               }}
               role="option"
@@ -227,13 +212,11 @@ export function CostCenterSelect({
                       isSelected ? 'text-gray-900 font-semibold' : 'text-gray-900 font-normal'
                     }`}
                   >
-                    {it.label}
+                    {leaf.name}
                   </div>
-                  {it.breadcrumb ? (
-                    <div className="text-[11px] text-gray-400 truncate mt-0.5">
-                      {it.breadcrumb}
-                    </div>
-                  ) : null}
+                  {showCostCenter && ccName && (
+                    <div className="text-[11px] text-gray-400 truncate mt-0.5">{ccName}</div>
+                  )}
                 </div>
                 {isSelected && <Check size={16} className="text-lucrai-600 shrink-0" />}
               </div>
@@ -249,14 +232,9 @@ export function CostCenterSelect({
       <button
         type="button"
         disabled={disabled}
-        title={disabled ? disabledHint : undefined}
         onClick={() => {
           if (disabled) return;
-          setOpen((v) => {
-            const next = !v;
-            if (next) onOpen?.();
-            return next;
-          });
+          setOpen((v) => !v);
         }}
         className={`w-full pl-3 pr-10 py-2.5 bg-gray-50 border-transparent border rounded-xl text-left text-sm text-gray-800 ${
           disabled
@@ -267,16 +245,14 @@ export function CostCenterSelect({
         aria-expanded={open}
       >
         <span className={value ? 'text-gray-900 font-medium' : 'text-gray-400'}>
-          <span className="block truncate">
-            {value ? selected?.name ?? placeholder : placeholder}
-          </span>
+          <span className="block truncate">{selectedLabel}</span>
         </span>
         <ChevronDown className="absolute right-3 top-3 text-gray-400" size={16} />
       </button>
 
       {open && (
         <>
-          {/* Mobile bottom-sheet — drag handle + backdrop forte + sombra elevada */}
+          {/* Mobile bottom-sheet */}
           <div className="sm:hidden fixed inset-0 z-[80] flex items-end justify-center">
             <button
               type="button"
@@ -285,14 +261,13 @@ export function CostCenterSelect({
               onClick={close}
             />
             <div className="relative w-full bg-white rounded-t-3xl overflow-hidden flex flex-col min-h-[60dvh] max-h-[85dvh] shadow-[0_-12px_40px_-8px_rgba(15,23,42,0.25)] animate-in slide-in-from-bottom-4 duration-200">
-              {/* drag handle */}
               <div className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-2.5 mb-1 shrink-0" />
               {renderHeader()}
               {renderList()}
             </div>
           </div>
 
-          {/* Desktop popover — ancorado abaixo do trigger, sem backdrop */}
+          {/* Desktop popover */}
           <div className="hidden sm:flex absolute z-[80] top-full left-0 right-0 mt-2 max-h-[420px] flex-col bg-white border border-gray-200 rounded-2xl shadow-[0_16px_40px_-8px_rgba(15,23,42,0.18)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
             {renderHeader()}
             {renderList()}
