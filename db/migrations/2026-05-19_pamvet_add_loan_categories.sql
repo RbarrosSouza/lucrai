@@ -7,7 +7,7 @@
 -- o que obrigava a lançar tudo em "Outras receitas/gastos não operacionais"
 -- e distorcia o resultado.
 --
--- Adiciona:
+-- Adiciona categorias:
 --   - 5.2.4 Juros de empréstimos e financiamentos   (despesa, ENTRA na DRE)
 --   - 7    Movimentações Financeiras                (raiz, fora da DRE)
 --     - 7.1  Empréstimos
@@ -16,6 +16,11 @@
 --     - 7.2  Transferências e Ajustes
 --       - 7.2.1 Transferência entre contas próprias
 --       - 7.2.2 Ajuste de saldo
+--
+-- E cost_centers correspondentes (necessários porque transactions.cost_center_id é obrigatório):
+--   - "Juros de empréstimos"          → categoria 5.2.4
+--   - "Empréstimos"                   → categoria 7.1
+--   - "Transferências e Ajustes"      → categoria 7.2
 --
 -- Idempotente: pode ser reaplicada com segurança.
 
@@ -130,9 +135,46 @@ begin
   end if;
 end$$;
 
+-- Cost centers para os subgrupos novos.
+-- transactions.cost_center_id é NOT NULL, então sem isso a Lu (WhatsApp) e o app
+-- web não conseguem lançar nas categorias novas.
+do $$
+declare
+  v_org       uuid := 'b97de7cb-b27d-4f2f-bc43-a37586202a9e';
+  v_cat_juros uuid;
+  v_cat_emp   uuid;
+  v_cat_tra   uuid;
+begin
+  select id into v_cat_juros from public.categories where org_id = v_org and ext_code = '5.2.4' limit 1;
+  select id into v_cat_emp   from public.categories where org_id = v_org and ext_code = '7.1'   limit 1;
+  select id into v_cat_tra   from public.categories where org_id = v_org and ext_code = '7.2'   limit 1;
+
+  if not exists (select 1 from public.cost_centers where org_id = v_org and dre_category_id = v_cat_juros) then
+    insert into public.cost_centers (org_id, name, is_active, dre_category_id)
+    values (v_org, 'Juros de empréstimos', true, v_cat_juros);
+  end if;
+
+  if not exists (select 1 from public.cost_centers where org_id = v_org and dre_category_id = v_cat_emp) then
+    insert into public.cost_centers (org_id, name, is_active, dre_category_id)
+    values (v_org, 'Empréstimos', true, v_cat_emp);
+  end if;
+
+  if not exists (select 1 from public.cost_centers where org_id = v_org and dre_category_id = v_cat_tra) then
+    insert into public.cost_centers (org_id, name, is_active, dre_category_id)
+    values (v_org, 'Transferências e Ajustes', true, v_cat_tra);
+  end if;
+end$$;
+
 -- Verificação manual (não faz parte da migration):
 -- select ext_code, name, type, include_in_dre, is_active
 -- from public.categories
 -- where org_id = 'b97de7cb-b27d-4f2f-bc43-a37586202a9e'
 --   and (ext_code = '5.2.4' or ext_code like '7%')
 -- order by ext_code;
+--
+-- select cc.name as centro, c.ext_code, c.name as categoria, c.include_in_dre
+-- from public.cost_centers cc
+-- join public.categories c on c.id = cc.dre_category_id
+-- where cc.org_id = 'b97de7cb-b27d-4f2f-bc43-a37586202a9e'
+--   and c.ext_code in ('5.2.4', '7.1', '7.2')
+-- order by c.ext_code;
