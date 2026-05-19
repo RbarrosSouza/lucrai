@@ -11,6 +11,7 @@ import { supabase } from '../services/supabaseClient';
 import { SupplierModal } from './transactions/SupplierModal';
 import { formatSupabaseError } from '../services/formatSupabaseError';
 import { CostCenterSelect } from './transactions/CostCenterSelect';
+import { SubcategorySelect } from './transactions/SubcategorySelect';
 import { SupplierSelect } from './transactions/SupplierSelect';
 import {
   addDaysISO,
@@ -27,11 +28,43 @@ const addMonths = addMonthsISO;
 const getFirstDayOfMonth = () => firstDayOfCurrentMonthISO();
 const getLastDayOfMonth = () => lastDayOfCurrentMonthISO();
 
+// Exibe "Subcategoria (Centro)" quando há subcategoria de nível 3 selecionada,
+// ou apenas o nome do Centro de Custo quando a categoria salva é a default do CC.
+function getCostCenterDisplayLabel(
+  transaction: Pick<Transaction, 'costCenterId' | 'categoryId'>,
+  costCenters: CostCenter[],
+  categories: Category[]
+): string {
+  const cc = costCenters.find((c) => c.id === transaction.costCenterId);
+  if (!cc) return '-';
+  if (transaction.categoryId && transaction.categoryId !== cc.dreCategoryId) {
+    const leaf = categories.find((c) => c.id === transaction.categoryId);
+    if (leaf) return `${leaf.name} (${cc.name})`;
+  }
+  return cc.name;
+}
+
+// Versão estruturada — devolve nome do centro e da subcategoria (folha de nível 3) separadamente.
+// Útil para layouts em que cada um vai num badge próprio.
+function getCostCenterDisplayParts(
+  transaction: Pick<Transaction, 'costCenterId' | 'categoryId'>,
+  costCenters: CostCenter[],
+  categories: Category[]
+): { ccName: string | null; leafName: string | null } {
+  const cc = costCenters.find((c) => c.id === transaction.costCenterId);
+  if (!cc) return { ccName: null, leafName: null };
+  if (transaction.categoryId && transaction.categoryId !== cc.dreCategoryId) {
+    const leaf = categories.find((c) => c.id === transaction.categoryId);
+    return { ccName: cc.name, leafName: leaf?.name ?? null };
+  }
+  return { ccName: cc.name, leafName: null };
+}
+
 // --- SWIPEABLE CARD COMPONENT ---
 
 interface SwipeableTransactionCardProps {
   transaction: Transaction;
-  costCenter?: CostCenter;
+  costCenterLabel: string;
   supplierLabel: string;
   onEdit: () => void;
   onDelete: () => void;
@@ -42,7 +75,7 @@ const SWIPE_THRESHOLD = 80; // pixels para revelar ações
 
 function SwipeableTransactionCard({
   transaction: t,
-  costCenter: cc,
+  costCenterLabel,
   supplierLabel,
   onEdit,
   onDelete,
@@ -155,9 +188,9 @@ function SwipeableTransactionCard({
             {formatDateBR(t.date)}
           </span>
           {renderStatusBadge(t.status, t.type)}
-          {cc && (
-            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-[100px]">
-              {cc.name}
+          {costCenterLabel && costCenterLabel !== '-' && (
+            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate max-w-[160px]">
+              {costCenterLabel}
             </span>
           )}
           {t.installments && (
@@ -250,6 +283,7 @@ const Transactions: React.FC = () => {
   const [desc, setDesc] = useState('');
   const [formSupplierId, setFormSupplierId] = useState('');
   const [costCenterId, setCostCenterId] = useState('');
+  const [subcategoryId, setSubcategoryId] = useState('');
   const [documentNumber, setDocumentNumber] = useState('');
   const [status, setStatus] = useState<TransactionStatus>(TransactionStatus.PENDING);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | ''>('');
@@ -387,8 +421,13 @@ const Transactions: React.FC = () => {
 
       const [suppRes, ccRes, catRes, bankRes] = await Promise.all([
         fetchSuppliersSafe(),
-        supabase.from('cost_centers').select('*'),
-        supabase.from('categories').select('id,name,type,is_active,include_in_dre,is_group,parent_id,sort_order'),
+        // .range(0, 19999) — sobrescreve o limite default do PostgREST (1000 rows).
+        // Necessário pra orgs com plano de contas grande (seed duplicado).
+        supabase.from('cost_centers').select('*').range(0, 19999),
+        supabase
+          .from('categories')
+          .select('id,name,type,is_active,include_in_dre,is_group,parent_id,sort_order')
+          .range(0, 19999),
         supabase.from('bank_accounts').select('id,name,bank_name,initial_balance,is_active'),
       ]);
 
@@ -458,7 +497,8 @@ const Transactions: React.FC = () => {
             const cat2 = await supabase
               .from('categories')
               .select('id,name,type,is_active,include_in_dre,is_group,parent_id,sort_order')
-              .order('sort_order', { ascending: true });
+              .order('sort_order', { ascending: true })
+              .range(0, 19999);
             if (!cat2.error && cat2.data) categoriesSource = cat2.data as any[];
           }
         }
@@ -655,6 +695,7 @@ const Transactions: React.FC = () => {
     // UX: inicia sem seleção; o supplier padrão é aplicado automaticamente no save se o usuário não escolher.
     setFormSupplierId('');
     setCostCenterId('');
+    setSubcategoryId('');
     setDocumentNumber('');
     setStatus(TransactionStatus.PENDING);
     setPaymentMethod('');
@@ -681,6 +722,11 @@ const Transactions: React.FC = () => {
     setTransactionType(t.type);
     setFormSupplierId(t.supplierId);
     setCostCenterId(t.costCenterId);
+    {
+      const editCc = costCenters.find((c) => c.id === t.costCenterId);
+      const isLeaf = !!editCc && t.categoryId && t.categoryId !== editCc.dreCategoryId;
+      setSubcategoryId(isLeaf ? t.categoryId : '');
+    }
     setDocumentNumber(t.documentNumber || '');
     setStatus(t.status);
     setPaymentMethod(t.paymentMethod || '');
@@ -746,11 +792,23 @@ const Transactions: React.FC = () => {
     const totalVal = parseFloat(amount);
     const effectiveCostCenterId = costCenterId;
     const cc = costCenters.find((c) => c.id === effectiveCostCenterId);
-    const derivedCategoryId = cc?.dreCategoryId ?? '';
-    if (!derivedCategoryId) {
+    const defaultCategoryId = cc?.dreCategoryId ?? '';
+    if (!defaultCategoryId) {
       alert('Este Centro de Custo não possui Categoria (DRE) vinculada. Vá em Configurações → Centros de Custo.');
       return;
     }
+    // Se a subcategoria escolhida é uma folha válida (filha da DRE do CC e não é grupo),
+    // usa ela; senão, fallback para a categoria default do Centro de Custo.
+    const subcategoryLeaf = subcategoryId
+      ? categories.find(
+          (c) =>
+            c.id === subcategoryId &&
+            c.parentId === defaultCategoryId &&
+            !c.isGroup &&
+            c.isActive
+        )
+      : null;
+    const derivedCategoryId = subcategoryLeaf ? subcategoryLeaf.id : defaultCategoryId;
 
     // DB Object Mapping
     // Regra de normalização (Fluxo de Caixa):
@@ -1164,7 +1222,7 @@ const Transactions: React.FC = () => {
                   <SwipeableTransactionCard
                     key={t.id}
                     transaction={t}
-                    costCenter={costCenters.find(c => c.id === t.costCenterId)}
+                    costCenterLabel={getCostCenterDisplayLabel(t, costCenters, categories)}
                     supplierLabel={getSupplierDisplayName(t)}
                     onEdit={() => handleEdit(t)}
                     onDelete={() => openDeleteConfirm(t.id)}
@@ -1179,7 +1237,7 @@ const Transactions: React.FC = () => {
                   <tr>
                     <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Vencimento</th>
                     <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Descrição / Documento</th>
-                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Centro de Custo</th>
+                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Fornecedor / Categorização</th>
                     <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Valor</th>
                     <th className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-400">Status</th>
                     <th className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-400">Ações</th>
@@ -1187,7 +1245,7 @@ const Transactions: React.FC = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
                   {filteredTransactions.map((t) => {
-                    const cc = costCenters.find(c => c.id === t.costCenterId);
+                    const { ccName, leafName } = getCostCenterDisplayParts(t, costCenters, categories);
                     const supplierLabel = getSupplierDisplayName(t);
                     return (
                       <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
@@ -1198,21 +1256,33 @@ const Transactions: React.FC = () => {
                         <td className="px-6 py-4">
                           <div className="flex flex-col">
                             <span className="text-sm font-semibold text-gray-900">{t.description}</span>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-xs text-gray-500 inline-flex items-center gap-1 min-w-0">
-                                <Building size={10} className="shrink-0" />
-                                <span className="truncate">{supplierLabel}</span>
+                            {t.documentNumber && (
+                              <span className="mt-0.5 inline-flex items-center gap-0.5 self-start text-[10px] bg-gray-100 text-gray-600 px-1.5 rounded">
+                                <FileText size={8} /> {t.documentNumber}
                               </span>
-                              {t.documentNumber && (
-                                <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 rounded flex items-center gap-0.5">
-                                  <FileText size={8} /> {t.documentNumber}
-                                </span>
-                              )}
-                            </div>
+                            )}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">{cc?.name || '-'}</span>
+                        <td className="px-6 py-4 text-sm text-gray-500 align-top">
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <span className="text-xs text-gray-700 inline-flex items-center gap-1 min-w-0">
+                              <Building size={10} className="shrink-0" />
+                              <span className="truncate font-medium">{supplierLabel}</span>
+                            </span>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {ccName && (
+                                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[11px] truncate max-w-[180px]">
+                                  {ccName}
+                                </span>
+                              )}
+                              {leafName && (
+                                <span className="bg-lucrai-50 text-lucrai-700 px-2 py-0.5 rounded text-[11px] truncate max-w-[180px]">
+                                  {leafName}
+                                </span>
+                              )}
+                              {!ccName && <span className="text-[11px] text-gray-400">-</span>}
+                            </div>
+                          </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-right font-bold text-gray-900 whitespace-nowrap tabular-nums tx-tracking">
                           {formatAmount(t)}
@@ -1300,7 +1370,8 @@ const Transactions: React.FC = () => {
       {/* 4. MODAL (NEW / EDIT) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-lucrai-900/30 backdrop-blur-sm z-50 flex items-end md:items-center justify-center">
-          <div className="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl w-full md:max-w-2xl flex flex-col max-h-[95vh] md:max-h-[90vh] animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-200 border border-gray-100">
+          {/* dvh = dynamic viewport height: encolhe quando o teclado virtual sobe, mantendo header e footer visíveis */}
+          <div className="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl w-full md:max-w-2xl flex flex-col max-h-[95dvh] md:max-h-[90dvh] animate-in slide-in-from-bottom-4 md:zoom-in-95 duration-200 border border-gray-100">
 
             {/* Header - Compacto para mobile */}
             <div className="flex justify-between items-center px-4 md:px-6 pt-4 md:pt-6 pb-2 shrink-0">
@@ -1322,8 +1393,8 @@ const Transactions: React.FC = () => {
               </div>
             </div>
 
-            {/* Body - Scroll interno */}
-            <div className="flex-1 overflow-y-auto px-4 md:px-6 py-2 min-h-0">
+            {/* Body - Scroll interno; overscroll-contain evita bounce vazar pro fundo no iOS */}
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 md:px-6 py-2 min-h-0">
 
               {/* Type Toggle & Value - Compacto */}
               <div className="flex flex-col items-center justify-center mb-4 md:mb-6 mt-1 md:mt-2">
@@ -1347,7 +1418,7 @@ const Transactions: React.FC = () => {
                   <span className="tx-tracking text-2xl md:text-3xl font-bold mr-2 text-lucrai-600">R$</span>
                   <input
                     type="number"
-                    autoFocus
+                    inputMode="decimal"
                     placeholder="0,00"
                     className="tx-tracking tabular-nums text-4xl md:text-5xl font-bold bg-transparent border-none focus:ring-0 outline-none w-full text-center placeholder-gray-300 text-lucrai-700"
                     value={amount}
@@ -1382,22 +1453,80 @@ const Transactions: React.FC = () => {
                     />
                   </div>
 
-                  <div className="col-span-12 md:col-span-8">
-                    <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 md:mb-1.5">Centro de Custo</label>
-                    <CostCenterSelect
-                      categories={categories}
-                      costCenters={costCenters}
-                      type={transactionType}
-                      value={costCenterId}
-                      placeholder="Selecione um centro de custo"
-                      onOpen={() => {
-                        fetchInitialData().catch(() => { });
-                      }}
-                      onChange={(id) => {
-                        setCostCenterId(id);
-                      }}
-                    />
-                  </div>
+                  {(() => {
+                    const selectedCc = costCenters.find((c) => c.id === costCenterId);
+                    // Folhas filtradas pelo CC selecionado.
+                    // Sem CC selecionado, listamos TODAS as folhas elegíveis do tipo (caminho subcategoria-first).
+                    const eligibleParentIds = new Set(
+                      costCenters.filter((c) => c.isActive).map((c) => c.dreCategoryId)
+                    );
+                    const subcatLeaves = selectedCc
+                      ? categories.filter(
+                          (c) =>
+                            c.parentId === selectedCc.dreCategoryId &&
+                            !c.isGroup &&
+                            c.isActive &&
+                            c.type === transactionType
+                        )
+                      : categories.filter(
+                          (c) =>
+                            !c.isGroup &&
+                            c.isActive &&
+                            c.type === transactionType &&
+                            !!c.parentId &&
+                            eligibleParentIds.has(c.parentId)
+                        );
+                    const hasSubcats = subcatLeaves.length > 0;
+                    const ccLockedBySubcat = !!subcategoryId;
+                    return (
+                      <>
+                        <div className={`col-span-12 ${hasSubcats ? 'md:col-span-4' : 'md:col-span-8'}`}>
+                          <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 md:mb-1.5">Centro de Custo</label>
+                          <CostCenterSelect
+                            categories={categories}
+                            costCenters={costCenters}
+                            type={transactionType}
+                            value={costCenterId}
+                            placeholder="Selecione um centro de custo"
+                            disabled={ccLockedBySubcat}
+                            disabledHint="Para trocar o centro, limpe a subcategoria primeiro."
+                            onOpen={() => {
+                              fetchInitialData().catch(() => { });
+                            }}
+                            onChange={(id) => {
+                              setCostCenterId(id);
+                              setSubcategoryId('');
+                            }}
+                          />
+                        </div>
+                        {hasSubcats && (
+                          <div className="col-span-12 md:col-span-4">
+                            <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 md:mb-1.5">Subcategoria</label>
+                            <SubcategorySelect
+                              leaves={subcatLeaves}
+                              costCenters={costCenters}
+                              showCostCenter={!selectedCc}
+                              value={subcategoryId}
+                              onChange={(leafId) => {
+                                setSubcategoryId(leafId);
+                                if (!leafId) return;
+                                // Subcategoria-first: se nenhum CC está selecionado, deduz o CC pela folha.
+                                if (!costCenterId) {
+                                  const leaf = categories.find((c) => c.id === leafId);
+                                  if (leaf?.parentId) {
+                                    const cc = costCenters.find(
+                                      (c) => c.dreCategoryId === leaf.parentId && c.isActive
+                                    );
+                                    if (cc) setCostCenterId(cc.id);
+                                  }
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Dates & Mode */}
