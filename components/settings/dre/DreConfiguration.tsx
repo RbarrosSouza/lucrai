@@ -26,7 +26,8 @@ export function DreConfiguration() {
       const { data, error } = await supabase
         .from('categories')
         .select('id,name,type,is_active,include_in_dre,is_group,parent_id,sort_order')
-        .order('sort_order', { ascending: true });
+        .order('sort_order', { ascending: true })
+        .range(0, 19999);
       if (error) throw error;
 
       const mapped = (data ?? []).map((c: any) => ({

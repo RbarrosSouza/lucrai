@@ -4,7 +4,7 @@ import { formatSupabaseError } from '../../services/formatSupabaseError';
 import type { Category, Transaction } from '../../types';
 import { TransactionStatus, TransactionType } from '../../types';
 import { addDaysISO, addMonthsISO, todayISOInSaoPaulo } from '../../services/dates';
-import { getMonthDateRange } from '../reports/reporting';
+import { dedupCategories, getMonthDateRange, remapTransactionCategoryIds } from '../reports/reporting';
 import type { BudgetRow, Comparison, DashboardBasis, DashboardKPIs, DashboardPeriodMode, TrendPoint } from './dashboardTypes';
 import type { CostCenter } from '../../types';
 
@@ -238,11 +238,18 @@ export function useDashboardData(params: {
           : supabase.from('budgets').select('id,month,owner_type,owner_id,amount').like('month', `${selectedYear}-%`);
 
       const [catRes, ccRes, budgetsRes, seriesTxs, periodTxs, prevPeriodTxs, yoyPeriodTxs, ytdTxs, alerts] = await Promise.all([
+        // .range(0, 19999) — sobrescreve o limite default do PostgREST (1000 rows).
+        // Necessário pra orgs com plano de contas grande (seed duplicado).
         supabase
           .from('categories')
           .select('id,name,type,is_active,include_in_dre,is_group,parent_id,sort_order')
-          .order('sort_order', { ascending: true }),
-        supabase.from('cost_centers').select('id,name,is_active,dre_category_id').order('name', { ascending: true }),
+          .order('sort_order', { ascending: true })
+          .range(0, 19999),
+        supabase
+          .from('cost_centers')
+          .select('id,name,is_active,dre_category_id')
+          .order('name', { ascending: true })
+          .range(0, 19999),
         budgetsQuery,
         fetchTransactions(ranges.series),
         fetchTransactions(ranges.period),
@@ -255,17 +262,22 @@ export function useDashboardData(params: {
       if (ccRes.error) throw ccRes.error;
       if (budgetsRes.error) throw budgetsRes.error;
 
+      // Mesma dedup que a DRE: funde categorias duplicadas (mesmo nome + mesmo pai canônico)
+      // e remapeia categoryId das transações pra evitar números espalhados em N árvores idênticas.
+      const rawCategories = (catRes.data ?? []).map(mapDbCategory);
+      const { deduped: dedupedCategories, idMap: catIdMap } = dedupCategories(rawCategories);
+
       setState({
         loading: false,
         error: null,
-        categories: (catRes.data ?? []).map(mapDbCategory),
+        categories: dedupedCategories,
         costCenters: (ccRes.data ?? []).map(mapDbCostCenter),
         budgets: (budgetsRes.data ?? []).map(mapDbBudget),
-        seriesTxs,
-        periodTxs,
-        prevPeriodTxs,
-        yoyPeriodTxs,
-        ytdTxs,
+        seriesTxs: remapTransactionCategoryIds(seriesTxs, catIdMap),
+        periodTxs: remapTransactionCategoryIds(periodTxs, catIdMap),
+        prevPeriodTxs: remapTransactionCategoryIds(prevPeriodTxs, catIdMap),
+        yoyPeriodTxs: remapTransactionCategoryIds(yoyPeriodTxs, catIdMap),
+        ytdTxs: remapTransactionCategoryIds(ytdTxs, catIdMap),
         openNext7: alerts.openNext7,
         overdueExpenseCount: alerts.overdueExpenseCount,
         overdueExpenseSum: alerts.overdueExpenseSum,

@@ -123,8 +123,9 @@ export function useBudgetModel(params: {
         supabase
           .from('categories')
           .select('id,name,type,is_active,include_in_dre,is_group,parent_id,sort_order')
-          .order('sort_order', { ascending: true }),
-        supabase.from('cost_centers').select('*').order('name', { ascending: true }),
+          .order('sort_order', { ascending: true })
+          .range(0, 19999),
+        supabase.from('cost_centers').select('*').order('name', { ascending: true }).range(0, 19999),
         supabase
           .from('transactions')
           .select(
