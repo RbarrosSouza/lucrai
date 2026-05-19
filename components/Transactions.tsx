@@ -1439,7 +1439,7 @@ const Transactions: React.FC = () => {
                     <input type="text" className="w-full pl-3 pr-3 py-2 md:py-2.5 bg-gray-50 border-transparent focus:bg-white border focus:border-gray-200 rounded-xl focus:ring-0 outline-none text-gray-800 text-sm" placeholder="NF-123" value={documentNumber} onChange={e => setDocumentNumber(e.target.value)} />
                   </div>
 
-                  <div className="col-span-12 md:col-span-4">
+                  <div className="col-span-12">
                     <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 md:mb-1.5">Fornecedor / Cliente</label>
                     <SupplierSelect
                       suppliers={suppliers}
@@ -1480,7 +1480,7 @@ const Transactions: React.FC = () => {
                     const ccLockedBySubcat = !!subcategoryId;
                     return (
                       <>
-                        <div className={`col-span-12 ${hasSubcats ? 'md:col-span-4' : 'md:col-span-8'}`}>
+                        <div className={`col-span-12 ${hasSubcats ? 'md:col-span-6' : ''}`}>
                           <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 md:mb-1.5">Centro de Custo</label>
                           <CostCenterSelect
                             categories={categories}
@@ -1500,7 +1500,7 @@ const Transactions: React.FC = () => {
                           />
                         </div>
                         {hasSubcats && (
-                          <div className="col-span-12 md:col-span-4">
+                          <div className="col-span-12 md:col-span-6">
                             <label className="block text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wide mb-1 md:mb-1.5">Subcategoria</label>
                             <SubcategorySelect
                               leaves={subcatLeaves}
