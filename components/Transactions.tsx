@@ -4,7 +4,7 @@ import {
   Search, Plus, Filter, CheckCircle, Clock, AlertTriangle,
   Trash2, X, Calendar, DollarSign, Tag, Briefcase, User,
   Building, Repeat, Layers, ArrowRight, Save, AlertCircle, ChevronDown,
-  CreditCard, CalendarDays, Edit2, FileText, Landmark, RefreshCw, MoreVertical
+  ChevronUp, ArrowUpDown, CreditCard, CalendarDays, Edit2, FileText, Landmark, RefreshCw, MoreVertical
 } from 'lucide-react';
 import { Transaction, TransactionStatus, TransactionType, Supplier, PaymentMethod, BankAccount, CostCenter, Category } from '../types';
 import { supabase } from '../services/supabaseClient';
@@ -27,6 +27,9 @@ import {
 const addMonths = addMonthsISO;
 const getFirstDayOfMonth = () => firstDayOfCurrentMonthISO();
 const getLastDayOfMonth = () => lastDayOfCurrentMonthISO();
+
+type TransactionSortKey = 'dueDate' | 'description' | 'supplier' | 'amount' | 'paymentDate';
+type SortDirection = 'asc' | 'desc';
 
 // Exibe "Subcategoria (Centro)" quando há subcategoria de nível 3 selecionada,
 // ou apenas o nome do Centro de Custo quando a categoria salva é a default do CC.
@@ -244,6 +247,10 @@ const Transactions: React.FC = () => {
   // --- FILTER STATE ---
   const [isFilterPanelOpen, setIsFilterPanelOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{
+    key: TransactionSortKey;
+    direction: SortDirection;
+  } | null>(null);
 
   // Advanced Filter Object
   const [filters, setFilters] = useState({
@@ -392,6 +399,27 @@ const Transactions: React.FC = () => {
     const fromLookup = (byId?.name ?? '').trim();
     if (fromLookup) return fromLookup;
     return 'Fornecedor não informado';
+  };
+
+  const handleSort = (key: TransactionSortKey) => {
+    const defaultDirectionByKey: Record<TransactionSortKey, SortDirection> = {
+      dueDate: 'asc',
+      description: 'asc',
+      supplier: 'asc',
+      amount: 'desc',
+      paymentDate: 'asc',
+    };
+
+    setSortConfig((current) => {
+      if (current?.key !== key) {
+        return { key, direction: defaultDirectionByKey[key] };
+      }
+
+      return {
+        key,
+        direction: current.direction === 'asc' ? 'desc' : 'asc',
+      };
+    });
   };
 
   const formatAmount = (t: Transaction): string => {
@@ -647,6 +675,62 @@ const Transactions: React.FC = () => {
       return true;
     });
   }, [transactions, searchTerm, filters, urlCategoryId, urlStatusOpen, urlDueNext7]);
+
+  const displayedTransactions = useMemo(() => {
+    if (!sortConfig) return filteredTransactions;
+
+    const collator = new Intl.Collator('pt-BR', {
+      numeric: true,
+      sensitivity: 'base',
+    });
+
+    const compareDate = (a?: string | null, b?: string | null) => {
+      const aHasValue = Boolean(a);
+      const bHasValue = Boolean(b);
+      if (!aHasValue && !bHasValue) return 0;
+      if (!aHasValue) return 1;
+      if (!bHasValue) return -1;
+      return collator.compare(a as string, b as string);
+    };
+
+    const compareText = (a?: string | null, b?: string | null) => {
+      return collator.compare((a ?? '').trim(), (b ?? '').trim());
+    };
+
+    return filteredTransactions
+      .map((transaction, index) => ({ transaction, index }))
+      .sort((a, b) => {
+        let result = 0;
+
+        switch (sortConfig.key) {
+          case 'dueDate':
+            result = compareDate(a.transaction.date, b.transaction.date);
+            break;
+          case 'description':
+            result = compareText(a.transaction.description, b.transaction.description);
+            break;
+          case 'supplier':
+            result = compareText(getSupplierDisplayName(a.transaction), getSupplierDisplayName(b.transaction));
+            break;
+          case 'amount':
+            result = Number(a.transaction.amount ?? 0) - Number(b.transaction.amount ?? 0);
+            break;
+          case 'paymentDate':
+            result = compareDate(a.transaction.paymentDate, b.transaction.paymentDate);
+            break;
+          default:
+            result = 0;
+        }
+
+        if (result === 0) result = compareDate(a.transaction.date, b.transaction.date);
+        if (result === 0) result = a.index - b.index;
+        if (sortConfig.key === 'paymentDate' && (!a.transaction.paymentDate || !b.transaction.paymentDate)) {
+          return result;
+        }
+        return sortConfig.direction === 'asc' ? result : -result;
+      })
+      .map(({ transaction }) => transaction);
+  }, [filteredTransactions, sortConfig, supplierById]);
 
   // 2. Summary Logic
   const summary = useMemo(() => {
@@ -923,6 +1007,37 @@ const Transactions: React.FC = () => {
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-red-100 text-red-700"><AlertTriangle size={10} className="mr-1" />Atrasado</span>;
       default: return null;
     }
+  };
+
+  const SortHeader = ({
+    sortKey,
+    children,
+    align = 'left',
+  }: {
+    sortKey: TransactionSortKey;
+    children: React.ReactNode;
+    align?: 'left' | 'right' | 'center';
+  }) => {
+    const active = sortConfig?.key === sortKey;
+    const Icon = active ? (sortConfig.direction === 'asc' ? ChevronUp : ChevronDown) : ArrowUpDown;
+    const alignment = align === 'right' ? 'justify-end text-right' : align === 'center' ? 'justify-center text-center' : 'justify-start text-left';
+
+    return (
+      <button
+        type="button"
+        onClick={() => handleSort(sortKey)}
+        className={`group inline-flex w-full items-center gap-1.5 rounded-lg py-1 transition-colors hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-lucrai-200 ${alignment} ${
+          active ? 'text-lucrai-700' : 'text-slate-400'
+        }`}
+        aria-label={`Ordenar por ${typeof children === 'string' ? children : 'coluna'}`}
+      >
+        <span>{children}</span>
+        <Icon
+          size={13}
+          className={`shrink-0 transition-colors ${active ? 'text-lucrai-600' : 'text-slate-300 group-hover:text-slate-500'}`}
+        />
+      </button>
+    );
   };
 
   return (
@@ -1218,7 +1333,7 @@ const Transactions: React.FC = () => {
             <>
               {/* MOBILE: Cards View com Swipe */}
               <div className="md:hidden divide-y divide-gray-100">
-                {filteredTransactions.map((t) => (
+                {displayedTransactions.map((t) => (
                   <SwipeableTransactionCard
                     key={t.id}
                     transaction={t}
@@ -1235,16 +1350,26 @@ const Transactions: React.FC = () => {
               <table className="hidden md:table min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
                   <tr>
-                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Vencimento</th>
-                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Descrição / Documento</th>
-                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Fornecedor / Categorização</th>
-                    <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Valor</th>
-                    <th className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-400">Status</th>
+                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400" aria-sort={sortConfig?.key === 'dueDate' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      <SortHeader sortKey="dueDate">Vencimento</SortHeader>
+                    </th>
+                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400" aria-sort={sortConfig?.key === 'description' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      <SortHeader sortKey="description">Descrição / Documento</SortHeader>
+                    </th>
+                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400" aria-sort={sortConfig?.key === 'supplier' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      <SortHeader sortKey="supplier">Fornecedor / Categorização</SortHeader>
+                    </th>
+                    <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400" aria-sort={sortConfig?.key === 'amount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      <SortHeader sortKey="amount" align="right">Valor</SortHeader>
+                    </th>
+                    <th className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-400" aria-sort={sortConfig?.key === 'paymentDate' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
+                      <SortHeader sortKey="paymentDate" align="center">Status / Pagamento</SortHeader>
+                    </th>
                     <th className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-400">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
-                  {filteredTransactions.map((t) => {
+                  {displayedTransactions.map((t) => {
                     const { ccName, leafName } = getCostCenterDisplayParts(t, costCenters, categories);
                     const supplierLabel = getSupplierDisplayName(t);
                     return (
