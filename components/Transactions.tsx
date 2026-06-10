@@ -31,6 +31,31 @@ const getLastDayOfMonth = () => lastDayOfCurrentMonthISO();
 type TransactionSortKey = 'dueDate' | 'description' | 'supplier' | 'amount' | 'paymentDate';
 type SortDirection = 'asc' | 'desc';
 
+const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  [PaymentMethod.PIX]: 'Pix',
+  [PaymentMethod.BOLETO]: 'Boleto',
+  [PaymentMethod.CREDIT_CARD]: 'Cartão de crédito',
+  [PaymentMethod.DEBIT_CARD]: 'Cartão de débito',
+  [PaymentMethod.TRANSFER]: 'Transferência',
+  [PaymentMethod.CASH]: 'Dinheiro',
+  [PaymentMethod.OTHER]: 'Outro',
+};
+
+function getPaymentMethodLabel(method?: PaymentMethod | ''): string | null {
+  if (!method) return null;
+  return PAYMENT_METHOD_LABELS[method] ?? method;
+}
+
+function getBankAccountLabel(bank?: Pick<BankAccount, 'name' | 'bankName'> | null): string | null {
+  if (!bank) return null;
+  const accountName = (bank.name ?? '').trim();
+  const bankName = (bank.bankName ?? '').trim();
+  if (accountName && bankName && accountName.toLowerCase() !== bankName.toLowerCase()) {
+    return `${accountName} - ${bankName}`;
+  }
+  return accountName || bankName || null;
+}
+
 // Exibe "Subcategoria (Centro)" quando há subcategoria de nível 3 selecionada,
 // ou apenas o nome do Centro de Custo quando a categoria salva é a default do CC.
 function getCostCenterDisplayLabel(
@@ -69,6 +94,8 @@ interface SwipeableTransactionCardProps {
   transaction: Transaction;
   costCenterLabel: string;
   supplierLabel: string;
+  bankAccountLabel: string | null;
+  paymentMethodLabel: string | null;
   onEdit: () => void;
   onDelete: () => void;
   renderStatusBadge: (status: TransactionStatus, type: TransactionType) => React.ReactNode;
@@ -76,14 +103,16 @@ interface SwipeableTransactionCardProps {
 
 const SWIPE_THRESHOLD = 80; // pixels para revelar ações
 
-function SwipeableTransactionCard({
+const SwipeableTransactionCard: React.FC<SwipeableTransactionCardProps> = ({
   transaction: t,
   costCenterLabel,
   supplierLabel,
+  bankAccountLabel,
+  paymentMethodLabel,
   onEdit,
   onDelete,
   renderStatusBadge,
-}: SwipeableTransactionCardProps) {
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [translateX, setTranslateX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -203,6 +232,23 @@ function SwipeableTransactionCard({
           )}
         </div>
 
+        {(bankAccountLabel || paymentMethodLabel) && (
+          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+            {bankAccountLabel && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded max-w-[180px]">
+                <Landmark size={10} className="shrink-0" />
+                <span className="min-w-0 truncate">{bankAccountLabel}</span>
+              </span>
+            )}
+            {paymentMethodLabel && (
+              <span className="inline-flex items-center gap-1 text-[10px] text-lucrai-700 bg-lucrai-50 px-1.5 py-0.5 rounded max-w-[180px]">
+                <CreditCard size={10} className="shrink-0" />
+                <span className="min-w-0 truncate">{paymentMethodLabel}</span>
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Indicador visual de swipe (sutil) */}
         {translateX === 0 && (
           <div className="absolute right-1 top-1/2 -translate-y-1/2 opacity-30 pointer-events-none">
@@ -212,7 +258,7 @@ function SwipeableTransactionCard({
       </div>
     </div>
   );
-}
+};
 
 async function trySeedDefaultDre(): Promise<{ ok: true } | { ok: false; reason: string }> {
   try {
@@ -391,6 +437,12 @@ const Transactions: React.FC = () => {
     for (const s of suppliers) map.set(s.id, s);
     return map;
   }, [suppliers]);
+
+  const bankAccountById = useMemo(() => {
+    const map = new Map<string, BankAccount & { isActive: boolean }>();
+    for (const b of bankAccounts) map.set(b.id, b);
+    return map;
+  }, [bankAccounts]);
 
   const getSupplierDisplayName = (t: Transaction): string => {
     const direct = (t.supplierName ?? '').trim();
@@ -630,10 +682,14 @@ const Transactions: React.FC = () => {
 
       // Search Term (Desc, Supplier, Doc)
       const searchLower = searchTerm.toLowerCase();
+      const bankAccountLabel = getBankAccountLabel(t.bankAccountId ? bankAccountById.get(t.bankAccountId) : null) ?? '';
+      const paymentMethodLabel = getPaymentMethodLabel(t.paymentMethod) ?? '';
       const matchesSearch =
         t.description.toLowerCase().includes(searchLower) ||
         (t.supplierName || '').toLowerCase().includes(searchLower) ||
-        (t.documentNumber && t.documentNumber.toLowerCase().includes(searchLower));
+        (t.documentNumber && t.documentNumber.toLowerCase().includes(searchLower)) ||
+        bankAccountLabel.toLowerCase().includes(searchLower) ||
+        paymentMethodLabel.toLowerCase().includes(searchLower);
 
       if (!matchesSearch) return false;
 
@@ -674,7 +730,7 @@ const Transactions: React.FC = () => {
 
       return true;
     });
-  }, [transactions, searchTerm, filters, urlCategoryId, urlStatusOpen, urlDueNext7]);
+  }, [transactions, searchTerm, filters, urlCategoryId, urlStatusOpen, urlDueNext7, bankAccountById]);
 
   const displayedTransactions = useMemo(() => {
     if (!sortConfig) return filteredTransactions;
@@ -1310,14 +1366,14 @@ const Transactions: React.FC = () => {
               <label className="block text-xs font-bold text-gray-500 mb-1">Banco / Conta</label>
               <select className="w-full text-sm border-gray-200 rounded-lg" value={filters.bankId} onChange={e => setFilters({ ...filters, bankId: e.target.value })}>
                 <option value="">Todos</option>
-                {bankAccounts.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                {bankAccounts.map(b => <option key={b.id} value={b.id}>{getBankAccountLabel(b)}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1">Método Pagto</label>
+              <label className="block text-xs font-bold text-gray-500 mb-1">Método de pagamento</label>
               <select className="w-full text-sm border-gray-200 rounded-lg" value={filters.paymentMethod} onChange={e => setFilters({ ...filters, paymentMethod: e.target.value as any })}>
                 <option value="">Todos</option>
-                {Object.values(PaymentMethod).map(m => <option key={m} value={m}>{m}</option>)}
+                {Object.values(PaymentMethod).map(m => <option key={m} value={m}>{getPaymentMethodLabel(m)}</option>)}
               </select>
             </div>
           </div>
@@ -1339,6 +1395,8 @@ const Transactions: React.FC = () => {
                     transaction={t}
                     costCenterLabel={getCostCenterDisplayLabel(t, costCenters, categories)}
                     supplierLabel={getSupplierDisplayName(t)}
+                    bankAccountLabel={getBankAccountLabel(t.bankAccountId ? bankAccountById.get(t.bankAccountId) : null)}
+                    paymentMethodLabel={getPaymentMethodLabel(t.paymentMethod)}
                     onEdit={() => handleEdit(t)}
                     onDelete={() => openDeleteConfirm(t.id)}
                     renderStatusBadge={renderStatusBadge}
@@ -1372,6 +1430,8 @@ const Transactions: React.FC = () => {
                   {displayedTransactions.map((t) => {
                     const { ccName, leafName } = getCostCenterDisplayParts(t, costCenters, categories);
                     const supplierLabel = getSupplierDisplayName(t);
+                    const bankAccountLabel = getBankAccountLabel(t.bankAccountId ? bankAccountById.get(t.bankAccountId) : null);
+                    const paymentMethodLabel = getPaymentMethodLabel(t.paymentMethod);
                     return (
                       <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
                         <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
@@ -1422,6 +1482,22 @@ const Transactions: React.FC = () => {
                           {t.status === TransactionStatus.PAID && t.paymentDate && (
                             <div className="text-[10px] text-gray-400 mt-1">
                               Pg: {formatDateBR(t.paymentDate)}
+                            </div>
+                          )}
+                          {(bankAccountLabel || paymentMethodLabel) && (
+                            <div className="mt-1.5 flex flex-col items-center gap-0.5">
+                              {bankAccountLabel && (
+                                <span className="inline-flex max-w-[180px] items-center gap-1 text-[10px] text-slate-600">
+                                  <Landmark size={10} className="shrink-0 text-slate-400" />
+                                  <span className="min-w-0 truncate">{bankAccountLabel}</span>
+                                </span>
+                              )}
+                              {paymentMethodLabel && (
+                                <span className="inline-flex max-w-[180px] items-center gap-1 text-[10px] text-lucrai-700">
+                                  <CreditCard size={10} className="shrink-0 text-lucrai-500" />
+                                  <span className="min-w-0 truncate">{paymentMethodLabel}</span>
+                                </span>
+                              )}
                             </div>
                           )}
                         </td>
@@ -1736,14 +1812,14 @@ const Transactions: React.FC = () => {
                         <label className="block text-[10px] md:text-xs font-bold text-gray-700 uppercase mb-1">Banco / Conta</label>
                         <select className="w-full bg-white border border-gray-200 text-xs md:text-sm text-gray-900 font-medium rounded-lg p-2 focus:ring-0 outline-none" value={bankAccountId} onChange={e => setBankAccountId(e.target.value)}>
                           <option value="">Selecione...</option>
-                          {bankAccounts.filter((b) => b.isActive).map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                          {bankAccounts.filter((b) => b.isActive).map(b => <option key={b.id} value={b.id}>{getBankAccountLabel(b)}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] md:text-xs font-bold text-gray-700 uppercase mb-1">Forma Pagto</label>
+                        <label className="block text-[10px] md:text-xs font-bold text-gray-700 uppercase mb-1">Forma de pagamento</label>
                         <select className="w-full bg-white border border-gray-200 text-xs md:text-sm text-gray-900 font-medium rounded-lg p-2 focus:ring-0 outline-none" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value as PaymentMethod)}>
                           <option value="">Selecione...</option>
-                          {Object.values(PaymentMethod).map(m => <option key={m} value={m}>{m}</option>)}
+                          {Object.values(PaymentMethod).map(m => <option key={m} value={m}>{getPaymentMethodLabel(m)}</option>)}
                         </select>
                       </div>
                     </div>
