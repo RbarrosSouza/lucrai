@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown, Search, X } from 'lucide-react';
 import type { Category, CostCenter } from '../../types';
 
@@ -77,29 +77,33 @@ export function SubcategorySelect({
       : selected.name
     : placeholder;
 
+  const close = useCallback(() => {
+    setOpen(false);
+    setQuery('');
+  }, []);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!open) return;
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === 'Escape') close();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [open]);
+  }, [open, close]);
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
       if (!open) return;
       const t = e.target as Node;
-      if (rootRef.current && !rootRef.current.contains(t)) setOpen(false);
+      if (rootRef.current && !rootRef.current.contains(t)) close();
     };
     document.addEventListener('mousedown', onDoc);
     return () => document.removeEventListener('mousedown', onDoc);
-  }, [open]);
+  }, [open, close]);
 
-  const close = () => {
-    setOpen(false);
-    setQuery('');
-  };
+  const resultCountLabel = `${items.length} ${
+    items.length === 1 ? 'opção encontrada' : 'opções encontradas'
+  }`;
 
   const renderHeader = () => (
     <div className="px-4 pt-3 pb-3 border-b border-gray-100 bg-white shrink-0">
@@ -131,7 +135,7 @@ export function SubcategorySelect({
         <button
           type="button"
           onClick={close}
-          className="p-2 rounded-xl text-gray-500 hover:bg-gray-100 sm:hidden"
+          className="p-2 rounded-xl text-gray-500 hover:bg-gray-100"
           aria-label="Fechar"
         >
           <X size={18} />
@@ -267,10 +271,27 @@ export function SubcategorySelect({
             </div>
           </div>
 
-          {/* Desktop popover */}
-          <div className="hidden sm:flex absolute z-[80] top-full left-0 right-0 mt-2 max-h-[420px] flex-col bg-white border border-gray-200 rounded-2xl shadow-[0_16px_40px_-8px_rgba(15,23,42,0.18)] overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-            {renderHeader()}
-            {renderList()}
+          {/* Desktop dialog */}
+          <div
+            className="hidden sm:flex fixed inset-0 z-[90] items-center justify-center bg-lucrai-900/35 backdrop-blur-[2px] p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Selecionar subcategoria"
+          >
+            <button
+              type="button"
+              className="absolute inset-0"
+              aria-label="Fechar"
+              onClick={close}
+            />
+            <div className="relative w-full max-w-xl h-[76dvh] max-h-[720px] min-h-[420px] flex flex-col bg-white border border-gray-200 rounded-2xl shadow-[0_24px_70px_-18px_rgba(15,23,42,0.35)] overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-4 pt-4 pb-1 bg-white border-b border-gray-100 shrink-0">
+                <div className="text-sm font-bold text-gray-900">Selecionar subcategoria</div>
+                <div className="text-xs text-gray-400 mt-0.5">{resultCountLabel}</div>
+              </div>
+              {renderHeader()}
+              {renderList()}
+            </div>
           </div>
         </>
       )}
