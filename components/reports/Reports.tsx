@@ -327,6 +327,18 @@ export default function Reports() {
       running += daily;
       return { day, in: d.in, out: d.out, daily, running, txs: d.txs };
     });
+    const totalIn = entries.reduce((sum, entry) => sum + entry.in, 0);
+    const totalOut = entries.reduce((sum, entry) => sum + entry.out, 0);
+    const totalNet = totalIn - totalOut;
+    const finalRunning = entries.at(-1)?.running ?? 0;
+    const balanceTone = (value: number) =>
+      value < 0 ? 'text-red-700' : value > 0 ? 'text-green-700' : 'text-gray-500';
+    const totalBadgeClass = (value: number) =>
+      value < 0
+        ? 'bg-red-50 text-red-700 ring-red-100'
+        : value > 0
+          ? 'bg-green-50 text-green-700 ring-green-100'
+          : 'bg-gray-100 text-gray-600 ring-gray-200';
 
     return (
       <>
@@ -359,21 +371,48 @@ export default function Reports() {
                     {formatDateBRShort(e.day)}{' '}
                     <span className="text-gray-400 text-xs">({weekdayShortBR(e.day)})</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-lucrai-700">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-700">
                     {e.in > 0 ? formatMoney(e.in) : '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-red-700">
                     {e.out > 0 ? `- ${formatMoney(e.out)}` : '-'}
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${e.daily >= 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${balanceTone(e.daily)}`}>
                     {formatMoney(e.daily)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-700 font-bold bg-gray-50/50">
+                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold bg-gray-50/50 ${balanceTone(e.running)}`}>
                     {formatMoney(e.running)}
                   </td>
                 </tr>
               ))}
             </tbody>
+            <tfoot className="bg-slate-50 border-t-2 border-slate-200">
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-extrabold">
+                  Total do mês
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                  <span className="inline-flex justify-end rounded-lg bg-green-50 px-3 py-1.5 font-extrabold tabular-nums text-green-700 ring-1 ring-inset ring-green-100 min-w-[124px]">
+                    {totalIn > 0 ? formatMoney(totalIn) : '-'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                  <span className="inline-flex justify-end rounded-lg bg-red-50 px-3 py-1.5 font-extrabold tabular-nums text-red-700 ring-1 ring-inset ring-red-100 min-w-[124px]">
+                    {totalOut > 0 ? `- ${formatMoney(totalOut)}` : '-'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
+                  <span className={`inline-flex justify-end rounded-lg px-3 py-1.5 font-extrabold tabular-nums ring-1 ring-inset min-w-[124px] ${totalBadgeClass(totalNet)}`}>
+                    {formatMoney(totalNet)}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-right bg-white/60">
+                  <span className={`inline-flex justify-end rounded-lg px-3 py-1.5 font-extrabold tabular-nums ring-1 ring-inset min-w-[124px] ${totalBadgeClass(finalRunning)}`}>
+                    {formatMoney(finalRunning)}
+                  </span>
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </>
@@ -502,5 +541,3 @@ export default function Reports() {
     </div>
   );
 }
-
-
