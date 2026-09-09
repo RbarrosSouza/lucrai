@@ -129,7 +129,7 @@ export default function Reports() {
       <React.Fragment key={category.id}>
         <tr className={`hover:bg-slate-50 transition-colors ${level === 0 ? 'bg-gray-50/60 font-medium' : ''}`}>
           <td
-            className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-l-4 border-transparent hover:border-lucrai-400 cursor-pointer"
+            className="px-3 py-2 whitespace-nowrap text-xs text-gray-900 border-l-4 border-transparent hover:border-lucrai-400 cursor-pointer"
             onClick={handleClick}
           >
             <div className="flex items-center" style={{ paddingLeft: `${level * 20}px` }}>
@@ -152,14 +152,14 @@ export default function Reports() {
             </div>
           </td>
           <td
-            className={`px-6 py-4 whitespace-nowrap text-sm text-right ${
+            className={`px-3 py-2 whitespace-nowrap text-xs tabular-nums text-right ${
               'text-gray-800'
             }`}
           >
             {effectiveSign === 'MINUS' ? '- ' : ''}
             {formatMoney(Math.abs(displayValue))}
           </td>
-          <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-gray-400">-</td>
+          <td className="px-3 py-2 whitespace-nowrap text-xs tabular-nums text-right text-gray-400">-</td>
         </tr>
 
         {hasChildren && isExpanded &&
@@ -170,9 +170,9 @@ export default function Reports() {
 
   const renderResultLine = (label: string, value: number, percent: number, colorClass: string = 'text-gray-900') => (
     <tr className="bg-gray-50 border-t border-b border-gray-200 font-bold">
-      <td className="px-6 py-3 text-sm text-gray-900">(=) {label}</td>
-      <td className={`px-6 py-3 text-sm text-right ${colorClass}`}>{formatMoney(value)}</td>
-      <td className="px-6 py-3 text-sm text-right text-gray-500">{Number.isFinite(percent) ? `${percent.toFixed(1)}%` : '-'}</td>
+      <td className="px-3 py-2 text-xs text-gray-900">(=) {label}</td>
+      <td className={`px-3 py-2 text-xs tabular-nums text-right ${colorClass}`}>{formatMoney(value)}</td>
+      <td className="px-3 py-2 text-xs tabular-nums text-right text-gray-500">{Number.isFinite(percent) ? `${percent.toFixed(1)}%` : '-'}</td>
     </tr>
   );
 
@@ -248,12 +248,12 @@ export default function Reports() {
           />
         </div>
         <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="report-ledger min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Descrição</th>
-              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Valor (R$)</th>
-              <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">AV %</th>
+              <th className="px-3 py-2 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Descrição</th>
+              <th className="px-3 py-2 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Valor (R$)</th>
+              <th className="px-3 py-2 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">AV %</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
@@ -274,11 +274,11 @@ export default function Reports() {
 
             {catNaoOp ? (
               <tr className="bg-gray-50/50 font-medium">
-                <td className="px-6 py-2 text-sm text-gray-900">(+/-) Resultado Não Operacional</td>
-                <td className="px-6 py-2 text-sm text-right text-gray-900">
+                <td className="px-3 py-2 text-xs text-gray-900">(+/-) Resultado Não Operacional</td>
+                <td className="px-3 py-2 text-xs tabular-nums text-right text-gray-900">
                   {formatMoney(metrics.naoOpNet)}
                 </td>
-                <td className="px-6 py-2 text-sm text-right text-gray-400">-</td>
+                <td className="px-3 py-2 text-xs tabular-nums text-right text-gray-400">-</td>
               </tr>
             ) : null}
 
@@ -286,11 +286,11 @@ export default function Reports() {
             {catImpostosLucro && renderCategoryRow(catImpostosLucro, basis, 0, 'MINUS')}
 
             <tr className="text-white font-bold text-lg bg-lucrai-500">
-              <td className="px-6 py-4">(=) {basis === 'CASH' ? 'Geração de Caixa Líquida' : 'Lucro Líquido'}</td>
-              <td className={`px-6 py-4 text-right ${metrics.lucroLiquido >= 0 ? 'text-white' : 'text-rose-100'}`}>
+              <td className="px-3 py-2">(=) {basis === 'CASH' ? 'Geração de Caixa Líquida' : 'Lucro Líquido'}</td>
+              <td className={`px-3 py-2 text-right ${metrics.lucroLiquido >= 0 ? 'text-white' : 'text-rose-100'}`}>
                 {formatMoney(metrics.lucroLiquido)}
               </td>
-              <td className="px-6 py-4 text-right text-white/80">{metrics.pctLucroLiquido.toFixed(1)}%</td>
+              <td className="px-3 py-2 text-right text-white/80">{metrics.pctLucroLiquido.toFixed(1)}%</td>
             </tr>
           </tbody>
         </table>
@@ -350,14 +350,14 @@ export default function Reports() {
           />
         </div>
         <div className="hidden md:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="report-ledger min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Data</th>
-                <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Entradas</th>
-                <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saídas</th>
-                <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo do Dia</th>
-                <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo Acumulado</th>
+                <th className="px-3 py-2 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Data</th>
+                <th className="px-3 py-2 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Entradas</th>
+                <th className="px-3 py-2 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saídas</th>
+                <th className="px-3 py-2 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo do Dia</th>
+                <th className="px-3 py-2 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo Acumulado</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
@@ -367,20 +367,20 @@ export default function Reports() {
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => handleOpenDrilldown(`Movimentações de ${formatDateBR(e.day)}`, e.txs)}
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-900 font-medium">
                     {formatDateBRShort(e.day)}{' '}
                     <span className="text-gray-400 text-xs">({weekdayShortBR(e.day)})</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-green-700">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs tabular-nums text-right text-green-700">
                     {e.in > 0 ? formatMoney(e.in) : '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right text-red-700">
+                  <td className="px-3 py-2 whitespace-nowrap text-xs tabular-nums text-right text-red-700">
                     {e.out > 0 ? `- ${formatMoney(e.out)}` : '-'}
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold ${balanceTone(e.daily)}`}>
+                  <td className={`px-3 py-2 whitespace-nowrap text-xs tabular-nums text-right font-semibold ${balanceTone(e.daily)}`}>
                     {formatMoney(e.daily)}
                   </td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-semibold bg-gray-50/50 ${balanceTone(e.running)}`}>
+                  <td className={`px-3 py-2 whitespace-nowrap text-xs tabular-nums text-right font-semibold bg-gray-50/50 ${balanceTone(e.running)}`}>
                     {formatMoney(e.running)}
                   </td>
                 </tr>
@@ -388,26 +388,26 @@ export default function Reports() {
             </tbody>
             <tfoot className="bg-slate-50 border-t-2 border-slate-200">
               <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 font-extrabold">
+                <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-900 font-extrabold">
                   Total do mês
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                  <span className="inline-flex justify-end rounded-lg bg-green-50 px-3 py-1.5 font-extrabold tabular-nums text-green-700 ring-1 ring-inset ring-green-100 min-w-[124px]">
+                <td className="px-3 py-2 whitespace-nowrap text-xs tabular-nums text-right">
+                  <span className="inline-flex justify-end rounded-lg bg-green-50 px-2 py-0.5 font-semibold tabular-nums text-green-700 ring-1 ring-inset ring-green-100 min-w-[100px]">
                     {totalIn > 0 ? formatMoney(totalIn) : '-'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                  <span className="inline-flex justify-end rounded-lg bg-red-50 px-3 py-1.5 font-extrabold tabular-nums text-red-700 ring-1 ring-inset ring-red-100 min-w-[124px]">
+                <td className="px-3 py-2 whitespace-nowrap text-xs tabular-nums text-right">
+                  <span className="inline-flex justify-end rounded-lg bg-red-50 px-2 py-0.5 font-semibold tabular-nums text-red-700 ring-1 ring-inset ring-red-100 min-w-[100px]">
                     {totalOut > 0 ? `- ${formatMoney(totalOut)}` : '-'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                  <span className={`inline-flex justify-end rounded-lg px-3 py-1.5 font-extrabold tabular-nums ring-1 ring-inset min-w-[124px] ${totalBadgeClass(totalNet)}`}>
+                <td className="px-3 py-2 whitespace-nowrap text-xs tabular-nums text-right">
+                  <span className={`inline-flex justify-end rounded-lg px-2 py-0.5 font-semibold tabular-nums ring-1 ring-inset min-w-[100px] ${totalBadgeClass(totalNet)}`}>
                     {formatMoney(totalNet)}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-right bg-white/60">
-                  <span className={`inline-flex justify-end rounded-lg px-3 py-1.5 font-extrabold tabular-nums ring-1 ring-inset min-w-[124px] ${totalBadgeClass(finalRunning)}`}>
+                <td className="px-3 py-2 whitespace-nowrap text-xs tabular-nums text-right bg-white/60">
+                  <span className={`inline-flex justify-end rounded-lg px-2 py-0.5 font-semibold tabular-nums ring-1 ring-inset min-w-[100px] ${totalBadgeClass(finalRunning)}`}>
                     {formatMoney(finalRunning)}
                   </span>
                 </td>
@@ -420,7 +420,7 @@ export default function Reports() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Relatórios Gerenciais</h1>
@@ -451,16 +451,16 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="bg-white/80 backdrop-blur rounded-3xl shadow-premium border border-white/60 overflow-hidden">
+      <div className="bg-white/80 backdrop-blur rounded-lg shadow-sm border border-white/60 overflow-hidden">
         <div className="border-b border-gray-200 bg-gray-50/60">
-          <nav className="-mb-px flex space-x-8 px-6 overflow-x-auto" aria-label="Tabs">
+          <nav className="-mb-px flex space-x-2 px-3 overflow-x-auto" aria-label="Tabs">
             <button
               onClick={() => setActiveReport(ReportType.DRE_ACCRUAL)}
               className={`${
                 activeReport === ReportType.DRE_ACCRUAL
                   ? 'border-lucrai-500 text-lucrai-700 bg-white border-t-2 border-t-lucrai-500 border-b-0'
                   : 'border-transparent text-gray-500 hover:text-gray-700 border-b-2 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-4 font-medium text-sm flex items-center gap-2 rounded-t-lg transition-all`}
+              } whitespace-nowrap py-2 px-3 font-medium text-sm flex items-center gap-2 rounded-t-lg transition-all`}
             >
               <FileText size={16} />
               DRE Gerencial (Competência)
@@ -472,7 +472,7 @@ export default function Reports() {
                 activeReport === ReportType.CASH_FLOW
                   ? 'border-lucrai-500 text-lucrai-700 bg-white border-t-2 border-t-lucrai-500 border-b-0'
                   : 'border-transparent text-gray-500 hover:text-gray-700 border-b-2 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-4 font-medium text-sm flex items-center gap-2 rounded-t-lg transition-all`}
+              } whitespace-nowrap py-2 px-3 font-medium text-sm flex items-center gap-2 rounded-t-lg transition-all`}
             >
               <FileText size={16} />
               Fluxo de Caixa (Realizado)
@@ -481,7 +481,7 @@ export default function Reports() {
         </div>
 
         {activeReport === ReportType.CASH_FLOW && (
-          <div className="p-4 border-b border-gray-100 bg-white flex flex-col sm:flex-row gap-3 items-center justify-between animate-in slide-in-from-top-2">
+          <div className="px-3 py-2 border-b border-gray-100 bg-white flex flex-col sm:flex-row gap-3 items-center justify-between animate-in slide-in-from-top-2">
             <div className="flex bg-gray-100 p-1 rounded-lg">
               <button
                 onClick={() => setCashFlowMode('DAILY')}

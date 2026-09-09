@@ -226,20 +226,20 @@ export default function BudgetForecast() {
   }, [periodMode, yearMonths, budgetCcMonth, realizedCcMonth]);
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-xl border border-gray-200">
-          <p className="text-xs font-bold text-gray-400 uppercase">Orçado ({planningType === TransactionType.EXPENSE ? 'Despesas' : 'Receitas'})</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{formatMoney(budgetTotal)}</p>
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <div className="bg-white px-3 py-2 rounded-lg border border-gray-200">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase">Orçado ({planningType === TransactionType.EXPENSE ? 'Despesas' : 'Receitas'})</p>
+          <p className="text-base font-semibold tabular-nums text-gray-900 mt-1">{formatMoney(budgetTotal)}</p>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-200">
-          <p className="text-xs font-bold text-gray-400 uppercase">Realizado (competência)</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{formatMoney(realizedTotal)}</p>
+        <div className="bg-white px-3 py-2 rounded-lg border border-gray-200">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase">Realizado (competência)</p>
+          <p className="text-base font-semibold tabular-nums text-gray-900 mt-1">{formatMoney(realizedTotal)}</p>
         </div>
-        <div className="bg-white p-5 rounded-xl border border-gray-200">
-          <p className="text-xs font-bold text-gray-400 uppercase">Disponível</p>
-          <p className={`text-2xl font-bold mt-1 ${remainingTotal < 0 ? 'text-rose-700' : 'text-gray-900'}`}>{formatMoney(remainingTotal)}</p>
-          <p className="text-xs text-gray-500 mt-1">{remainingTotal < 0 ? 'Alerta: acima do orçamento.' : 'Dentro do orçamento.'}</p>
+        <div className="bg-white px-3 py-2 rounded-lg border border-gray-200">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase">Disponível</p>
+          <p className={`text-base font-semibold tabular-nums mt-1 ${remainingTotal < 0 ? 'text-rose-700' : 'text-gray-900'}`}>{formatMoney(remainingTotal)}</p>
+          <p className="text-[11px] text-gray-500 mt-0.5">{remainingTotal < 0 ? 'Alerta: acima do orçamento.' : 'Dentro do orçamento.'}</p>
         </div>
       </div>
 
@@ -247,7 +247,7 @@ export default function BudgetForecast() {
         <div className="inline-flex bg-gray-100 p-1 rounded-lg">
           <button
             onClick={() => setPlanningType(TransactionType.EXPENSE)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
               planningType === TransactionType.EXPENSE ? 'bg-white text-lucrai-700 shadow-sm' : 'text-gray-600 hover:text-gray-800'
             }`}
           >
@@ -255,7 +255,7 @@ export default function BudgetForecast() {
           </button>
           <button
             onClick={() => setPlanningType(TransactionType.INCOME)}
-            className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-colors ${
               planningType === TransactionType.INCOME ? 'bg-white text-lucrai-700 shadow-sm' : 'text-gray-600 hover:text-gray-800'
             }`}
           >
@@ -269,7 +269,7 @@ export default function BudgetForecast() {
         {(['DRE', 'CATEGORY', 'CC'] as const).map((lvl) => (
           <label
             key={lvl}
-            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-semibold cursor-pointer whitespace-nowrap ${
+            className={`inline-flex items-center gap-2 px-2 py-1.5 rounded-lg border text-xs font-semibold cursor-pointer whitespace-nowrap ${
               chartLevels[lvl] ? 'bg-lucrai-50 border-lucrai-200 text-lucrai-700' : 'bg-white border-gray-200 text-gray-700'
             }`}
           >
@@ -284,51 +284,51 @@ export default function BudgetForecast() {
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
         <div className="overflow-auto">
-          <table className="min-w-full text-sm">
+          <table className="min-w-full text-xs">
             <thead className="bg-gray-50 text-gray-600 text-[11px] uppercase tracking-wide">
               {periodMode === 'YEAR' ? (
                 <>
                   <tr>
-                    <th className="px-5 py-3 text-left sticky left-0 bg-gray-50 z-10" rowSpan={2}>
+                    <th className="px-3 py-2 text-left sticky left-0 bg-gray-50 z-10" rowSpan={2}>
                       <span className="font-extrabold text-gray-700">Título</span>
                     </th>
                     {yearMonths.map((m) => (
-                      <th key={m} className="px-4 py-3 text-center whitespace-nowrap" colSpan={2}>
+                      <th key={m} className="px-3 py-2 text-center whitespace-nowrap" colSpan={2}>
                         <span className="font-extrabold text-gray-700">{monthNamePt(m)}</span>
                       </th>
                     ))}
-                    <th className="px-4 py-3 text-center whitespace-nowrap" colSpan={2}>
+                    <th className="px-3 py-2 text-center whitespace-nowrap" colSpan={2}>
                       <span className="font-extrabold text-gray-700">Total</span>
                     </th>
-                    <th className="px-4 py-3 text-right whitespace-nowrap" rowSpan={2}>
+                    <th className="px-3 py-2 text-right whitespace-nowrap" rowSpan={2}>
                       <span className="font-extrabold text-gray-700">Dif.</span>
                     </th>
                   </tr>
                   <tr>
                     {yearMonths.map((m) => (
                       <React.Fragment key={`${m}:sub`}>
-                        <th className="px-4 py-2 text-right font-bold text-gray-500 whitespace-nowrap">Orçado</th>
-                        <th className="px-4 py-2 text-right font-bold text-gray-500 whitespace-nowrap">Realizado</th>
+                        <th className="px-3 py-1.5 text-right font-bold text-gray-500 whitespace-nowrap">Orçado</th>
+                        <th className="px-3 py-1.5 text-right font-bold text-gray-500 whitespace-nowrap">Realizado</th>
                       </React.Fragment>
                     ))}
-                    <th className="px-4 py-2 text-right font-bold text-gray-500 whitespace-nowrap">Orçado</th>
-                    <th className="px-4 py-2 text-right font-bold text-gray-500 whitespace-nowrap">Realizado</th>
+                    <th className="px-3 py-1.5 text-right font-bold text-gray-500 whitespace-nowrap">Orçado</th>
+                    <th className="px-3 py-1.5 text-right font-bold text-gray-500 whitespace-nowrap">Realizado</th>
                   </tr>
                 </>
               ) : (
                 <tr>
-                  <th className="px-5 py-3 text-left">
+                  <th className="px-3 py-2 text-left">
                     <span className="font-extrabold text-gray-700">Título</span>
                   </th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">
+                  <th className="px-3 py-2 text-right whitespace-nowrap">
                     <span className="font-extrabold text-gray-700">Orçado</span>
                   </th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">
+                  <th className="px-3 py-2 text-right whitespace-nowrap">
                     <span className="font-extrabold text-gray-700">Realizado</span>
                   </th>
-                  <th className="px-4 py-3 text-right whitespace-nowrap">
+                  <th className="px-3 py-2 text-right whitespace-nowrap">
                     <span className="font-extrabold text-gray-700">Dif.</span>
                   </th>
                 </tr>
@@ -373,7 +373,7 @@ export default function BudgetForecast() {
                   return (
                     <tr key={key} className={`${rowBg} hover:bg-lucrai-50/50`}>
                       <td
-                        className={`px-5 ${r.level === 'CC' ? 'py-2.5' : 'py-3'} sticky left-0 z-20 ${rowBg} ${leftBorder}`}
+                        className={`px-3 py-1.5 sticky left-0 z-20 ${rowBg} ${leftBorder}`}
                       >
                         <div className="flex items-center gap-2 min-w-0" style={{ paddingLeft: indent }}>
                           {canToggle ? (
@@ -400,22 +400,22 @@ export default function BudgetForecast() {
                             const cell = r.monthly?.find((x) => x.month === m) ?? { budget: 0, realized: 0 };
                             return (
                               <React.Fragment key={`${key}:${m}`}>
-                                <td className={`px-4 py-3 text-right ${numberClass}`}>{formatMoney(cell.budget)}</td>
-                                <td className={`px-4 py-3 text-right ${numberClass}`}>{formatMoney(cell.realized)}</td>
+                                <td className={`px-3 py-2 text-right ${numberClass}`}>{formatMoney(cell.budget)}</td>
+                                <td className={`px-3 py-2 text-right ${numberClass}`}>{formatMoney(cell.realized)}</td>
                               </React.Fragment>
                             );
                           })}
-                          <td className={`px-4 py-3 text-right ${numberClass}`}>{formatMoney(r.totalBudget)}</td>
-                          <td className={`px-4 py-3 text-right ${numberClass}`}>{formatMoney(r.totalRealized)}</td>
-                          <td className={`px-4 py-3 text-right ${diffClass}`}>
+                          <td className={`px-3 py-2 text-right ${numberClass}`}>{formatMoney(r.totalBudget)}</td>
+                          <td className={`px-3 py-2 text-right ${numberClass}`}>{formatMoney(r.totalRealized)}</td>
+                          <td className={`px-3 py-2 text-right ${diffClass}`}>
                             {diff < 0 ? `- ${formatMoney(Math.abs(diff))}` : `+ ${formatMoney(diff)}`}
                           </td>
                         </>
                       ) : (
                         <>
-                          <td className={`px-4 py-3 text-right ${numberClass}`}>{formatMoney(r.totalBudget)}</td>
-                          <td className={`px-4 py-3 text-right ${numberClass}`}>{formatMoney(r.totalRealized)}</td>
-                          <td className={`px-4 py-3 text-right ${diffClass}`}>
+                          <td className={`px-3 py-2 text-right ${numberClass}`}>{formatMoney(r.totalBudget)}</td>
+                          <td className={`px-3 py-2 text-right ${numberClass}`}>{formatMoney(r.totalRealized)}</td>
+                          <td className={`px-3 py-2 text-right ${diffClass}`}>
                             {diff < 0 ? `- ${formatMoney(Math.abs(diff))}` : `+ ${formatMoney(diff)}`}
                           </td>
                         </>
@@ -427,18 +427,18 @@ export default function BudgetForecast() {
 
               {periodMode === 'YEAR' && annualTotals ? (
                 <tr className="bg-gray-50">
-                  <td className="px-5 py-3 font-extrabold text-gray-900 sticky left-0 z-20 bg-gray-50 border-l-4 border-lucrai-500">
+                  <td className="px-3 py-2 font-extrabold text-gray-900 sticky left-0 z-20 bg-gray-50 border-l-4 border-lucrai-500">
                     TOTAL
                   </td>
                   {annualTotals.monthly.map((m) => (
                     <React.Fragment key={`total:${m.month}`}>
-                      <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(m.budget)}</td>
-                      <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(m.realized)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(m.budget)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(m.realized)}</td>
                     </React.Fragment>
                   ))}
-                  <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(annualTotals.totalBudget)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(annualTotals.totalRealized)}</td>
-                  <td className={`px-4 py-3 text-right tabular-nums whitespace-nowrap font-extrabold ${annualTotals.totalBudget - annualTotals.totalRealized < 0 ? 'text-rose-700' : 'text-gray-800'}`}>
+                  <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(annualTotals.totalBudget)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(annualTotals.totalRealized)}</td>
+                  <td className={`px-3 py-2 text-right tabular-nums whitespace-nowrap font-extrabold ${annualTotals.totalBudget - annualTotals.totalRealized < 0 ? 'text-rose-700' : 'text-gray-800'}`}>
                     {annualTotals.totalBudget - annualTotals.totalRealized < 0
                       ? `- ${formatMoney(Math.abs(annualTotals.totalBudget - annualTotals.totalRealized))}`
                       : `+ ${formatMoney(annualTotals.totalBudget - annualTotals.totalRealized)}`}
@@ -446,12 +446,12 @@ export default function BudgetForecast() {
                 </tr>
               ) : periodMode !== 'YEAR' ? (
                 <tr className="bg-gray-50">
-                  <td className="px-5 py-3 font-extrabold text-gray-900 sticky left-0 z-20 bg-gray-50 border-l-4 border-lucrai-500">
+                  <td className="px-3 py-2 font-extrabold text-gray-900 sticky left-0 z-20 bg-gray-50 border-l-4 border-lucrai-500">
                     TOTAL
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(budgetTotal)}</td>
-                  <td className="px-4 py-3 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(realizedTotal)}</td>
-                  <td className={`px-4 py-3 text-right tabular-nums whitespace-nowrap font-extrabold ${budgetTotal - realizedTotal < 0 ? 'text-rose-700' : 'text-gray-800'}`}>
+                  <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(budgetTotal)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums whitespace-nowrap font-extrabold text-gray-900">{formatMoney(realizedTotal)}</td>
+                  <td className={`px-3 py-2 text-right tabular-nums whitespace-nowrap font-extrabold ${budgetTotal - realizedTotal < 0 ? 'text-rose-700' : 'text-gray-800'}`}>
                     {budgetTotal - realizedTotal < 0 ? `- ${formatMoney(Math.abs(budgetTotal - realizedTotal))}` : `+ ${formatMoney(budgetTotal - realizedTotal)}`}
                   </td>
                 </tr>

@@ -48,7 +48,7 @@ const NavItem = ({
       onClick={onClick}
       title={collapsed ? label : undefined}
       aria-label={label}
-      className={`group relative flex h-12 items-center rounded-2xl transition-all focus:outline-none focus:ring-2 focus:ring-white/20 min-w-0 ${
+      className={`group relative flex h-10 items-center rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-white/20 min-w-0 ${
         collapsed ? 'justify-center px-0' : 'gap-3 px-4'
       } ${
         isActive
@@ -86,7 +86,7 @@ function AppLayoutBody() {
   }, [location.search]);
 
   useEffect(() => {
-    if (settingsActive && !sidebarCollapsed) setSettingsOpen(true);
+    setSettingsOpen(settingsActive && !sidebarCollapsed);
   }, [settingsActive, sidebarCollapsed]);
 
   useEffect(() => {
@@ -123,7 +123,7 @@ function AppLayoutBody() {
       <aside
         id="app-sidebar"
         className={`hidden md:block fixed inset-y-0 left-0 z-30 bg-brand-deep border-r border-white/5 transform transition-[width,transform] duration-300 ease-in-out md:relative md:translate-x-0 ${
-          sidebarCollapsed ? 'md:w-20' : 'md:w-64'
+          sidebarCollapsed ? 'md:w-20' : 'md:w-56'
         } ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
@@ -336,7 +336,7 @@ function AppLayoutBody() {
           onMenu={() => navigate('/menu')}
         />
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 relative pb-24 md:pb-0">
+        <main className="flex-1 overflow-y-auto p-4 md:p-5 relative pb-24 md:pb-0">
           <Outlet />
         </main>
 

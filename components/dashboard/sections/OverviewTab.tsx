@@ -16,12 +16,13 @@ function formatMoneyCompact(v: number) {
 }
 
 export function OverviewTab(props: {
+  notice?: React.ReactNode;
   basis: DashboardBasis;
   kpis: DashboardKPIs;
   comparisons: Record<string, unknown>;
   trendSeries: TrendPoint[];
 }) {
-  const { basis, kpis, trendSeries } = props;
+  const { basis, kpis, trendSeries, notice } = props;
 
   const titleBasis = basis === 'ACCRUAL' ? 'Base: competência' : 'Base: caixa';
 
@@ -30,39 +31,41 @@ export function OverviewTab(props: {
   }, [trendSeries]);
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-3">
       {/* KPI Cards */}
       {/* KPI Cards - compactos em mobile */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-        <div className="bg-white/80 backdrop-blur p-4 md:p-6 rounded-2xl md:rounded-3xl border border-white/60 shadow-premium hover:-translate-y-1 hover:shadow-float transition-all">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="bg-white/80 backdrop-blur px-4 py-3 rounded-lg border border-white/60 shadow-sm">
           <div className="flex justify-between items-start">
             <div className="min-w-0">
-              <p className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Saldo</p>
-              <h3 className={`text-2xl md:text-4xl font-light mt-1 md:mt-2 tabular-nums ${kpis.balance >= 0 ? 'text-slate-800' : 'text-rose-700'}`}>
+              <p className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">{basis === 'ACCRUAL' ? 'Resultado do período' : 'Movimento líquido do período'}</p>
+              <h3 className={`text-xl md:text-2xl font-semibold mt-1 tabular-nums ${kpis.balance >= 0 ? 'text-slate-800' : 'text-rose-700'}`}>
                 {formatMoney(kpis.balance)}
               </h3>
-              <div className="mt-2 md:mt-3 text-[10px] md:text-xs text-slate-500">{titleBasis}</div>
+              <div className="mt-1 text-[10px] md:text-xs text-slate-500">{titleBasis}</div>
             </div>
-            <div className="p-2 md:p-3 rounded-2xl md:rounded-3xl bg-slate-50 text-slate-400 border border-white/60">
+            <div className="p-2 rounded-lg bg-slate-50 text-slate-400 border border-white/60">
               <DollarSign size={16} className="md:w-5 md:h-5" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white/80 backdrop-blur p-4 md:p-6 rounded-2xl md:rounded-3xl border border-white/60 shadow-premium hover:-translate-y-1 hover:shadow-float transition-all">
+        <div className="bg-white/80 backdrop-blur px-4 py-3 rounded-lg border border-white/60 shadow-sm">
           <p className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Entradas</p>
-          <h3 className="text-2xl md:text-4xl font-light mt-1 md:mt-2 text-slate-800 tabular-nums">{formatMoney(kpis.revenue)}</h3>
+          <h3 className="text-xl md:text-2xl font-semibold mt-1 text-slate-800 tabular-nums">{formatMoney(kpis.revenue)}</h3>
         </div>
 
-        <div className="bg-white/80 backdrop-blur p-4 md:p-6 rounded-2xl md:rounded-3xl border border-white/60 shadow-premium hover:-translate-y-1 hover:shadow-float transition-all">
+        <div className="bg-white/80 backdrop-blur px-4 py-3 rounded-lg border border-white/60 shadow-sm">
           <p className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Saídas</p>
-          <h3 className="text-2xl md:text-4xl font-light mt-1 md:mt-2 text-slate-800 tabular-nums">{formatMoney(kpis.expense)}</h3>
+          <h3 className="text-xl md:text-2xl font-semibold mt-1 text-slate-800 tabular-nums">{formatMoney(kpis.expense)}</h3>
         </div>
       </div>
 
+      {notice}
+
       {/* Main Chart - altura responsiva */}
-      <div className="bg-white/80 backdrop-blur p-4 md:p-6 rounded-2xl md:rounded-3xl border border-white/60 shadow-premium hover:shadow-float transition-all">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-3 mb-3 md:mb-5">
+      <div className="bg-white/80 backdrop-blur px-4 py-3 rounded-lg border border-white/60 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-3 mb-3">
           <div>
             <div className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Tendência</div>
             <h2 className="text-base md:text-lg font-bold text-slate-800">Entradas vs. Saídas</h2>
@@ -79,7 +82,7 @@ export function OverviewTab(props: {
             </span>
           </div>
         </div>
-        <div className="h-48 md:h-80 w-full">
+        <div className="h-56 md:h-[260px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
               <defs>
@@ -93,11 +96,11 @@ export function OverviewTab(props: {
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8' }} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#94a3b8' }}
+                tick={{ fill: '#64748b', fontSize: 11 }}
                 tickFormatter={(value) => formatMoneyCompact(value)}
               />
               <Tooltip

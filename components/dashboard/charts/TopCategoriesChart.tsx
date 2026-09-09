@@ -1,3 +1,4 @@
+import { FinancialTooltip } from './FinancialTooltip';
 import React, { useMemo } from 'react';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { Category, Transaction } from '../../../types';
@@ -31,7 +32,8 @@ export function TopCategoriesChart({ categories, periodTxs }: Props) {
     const arr = Array.from(byCategory.entries())
       .map(([id, value]) => ({ name: catMap.get(id) || 'Outros', value }))
       .sort((a, b) => b.value - a.value)
-      .slice(0, 5);
+      .slice(0, 5)
+      .map((item, index) => ({ ...item, color: COLORS[index % COLORS.length] }));
 
     return arr;
   }, [categories, periodTxs]);
@@ -56,7 +58,7 @@ export function TopCategoriesChart({ categories, periodTxs }: Props) {
       <div className="h-40 md:h-56 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 10, right: 10 }}>
-            <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={formatMoneyCompact} />
+            <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={formatMoneyCompact} />
             <YAxis
               dataKey="name"
               type="category"
@@ -65,19 +67,10 @@ export function TopCategoriesChart({ categories, periodTxs }: Props) {
               tick={{ fill: '#475569', fontSize: 11, fontWeight: 600 }}
               width={100}
             />
-            <Tooltip
-              contentStyle={{
-                borderRadius: '12px',
-                border: 'none',
-                background: '#1E293B',
-                color: '#fff',
-                fontSize: '11px',
-              }}
-              formatter={(value: number) => [formatMoneyCompact(value), 'Valor']}
-            />
+            <Tooltip content={<FinancialTooltip />} cursor={{ fill: '#0164b4', fillOpacity: 0.06, stroke: '#cbd5e1', strokeDasharray: '3 3' }} />
             <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={18}>
-              {data.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              {data.map((item, i) => (
+                <Cell key={i} fill={item.color} />
               ))}
             </Bar>
           </BarChart>

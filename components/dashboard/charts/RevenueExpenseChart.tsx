@@ -1,3 +1,4 @@
+import { FinancialTooltip } from './FinancialTooltip';
 import React from 'react';
 import {
   Area,
@@ -67,18 +68,9 @@ export function RevenueExpenseChart({ trendSeries, basis }: Props) {
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={formatMoneyCompact} />
-            <Tooltip
-              contentStyle={{
-                borderRadius: '12px',
-                border: 'none',
-                background: '#1E293B',
-                color: '#fff',
-                fontSize: '11px',
-              }}
-              labelStyle={{ color: '#E2E8F0', fontWeight: 700 }}
-            />
+            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={formatMoneyCompact} />
+            <Tooltip content={<FinancialTooltip />} cursor={{ fill: '#0164b4', fillOpacity: 0.06, stroke: '#cbd5e1', strokeDasharray: '3 3' }} />
             <Area type="monotone" dataKey="receita" stroke="#0164B4" fill="url(#colorReceita)" strokeWidth={2} />
             <Area type="monotone" dataKey="despesa" stroke="#64748b" fill="url(#colorDespesa)" strokeWidth={2} />
             <Line type="monotone" dataKey="saldo" stroke="#10b981" strokeWidth={2} dot={false} />

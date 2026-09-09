@@ -1,3 +1,4 @@
+import { PayablesPanel } from './dashboard/PayablesPanel';
 import React, { useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useOrgProfile } from './org/OrgProfileContext';
@@ -147,6 +148,8 @@ export default function DashboardHub() {
           selectedYear={selectedYear}
         />
       </div>
+
+      <PayablesPanel refreshKey={isRefreshing} />
     </div>
   );
 }

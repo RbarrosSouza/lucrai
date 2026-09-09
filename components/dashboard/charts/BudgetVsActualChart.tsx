@@ -1,3 +1,4 @@
+import { FinancialTooltip } from './FinancialTooltip';
 import React, { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { BudgetRow, DashboardPeriodMode } from '../dashboardTypes';
@@ -76,7 +77,7 @@ export function BudgetVsActualChart({ budgets, costCenters, periodTxs, periodMod
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ left: 10, right: 10 }}>
             <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
-            <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={formatMoneyCompact} />
+            <XAxis type="number" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={formatMoneyCompact} />
             <YAxis
               dataKey="name"
               type="category"
@@ -85,16 +86,7 @@ export function BudgetVsActualChart({ budgets, costCenters, periodTxs, periodMod
               tick={{ fill: '#475569', fontSize: 10, fontWeight: 600 }}
               width={90}
             />
-            <Tooltip
-              contentStyle={{
-                borderRadius: '12px',
-                border: 'none',
-                background: '#1E293B',
-                color: '#fff',
-                fontSize: '11px',
-              }}
-              formatter={(value: number, name: string) => [formatMoneyCompact(value), name === 'orcado' ? 'Orçado' : 'Realizado']}
-            />
+            <Tooltip content={<FinancialTooltip />} cursor={{ fill: '#0164b4', fillOpacity: 0.06, stroke: '#cbd5e1', strokeDasharray: '3 3' }} />
             <Legend
               wrapperStyle={{ fontSize: '10px', fontWeight: 600 }}
               formatter={(value) => (value === 'orcado' ? 'Orçado' : 'Realizado')}

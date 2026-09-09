@@ -1,3 +1,4 @@
+import { FinancialTooltip } from './FinancialTooltip';
 import React, { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { Transaction } from '../../../types';
@@ -73,17 +74,8 @@ export function MoMComparisonChart({ periodTxs, prevPeriodTxs, periodMode, selec
           <BarChart data={data} margin={{ left: 0, right: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#475569', fontSize: 11, fontWeight: 600 }} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={formatMoneyCompact} />
-            <Tooltip
-              contentStyle={{
-                borderRadius: '12px',
-                border: 'none',
-                background: '#1E293B',
-                color: '#fff',
-                fontSize: '11px',
-              }}
-              formatter={(value: number) => [formatMoneyCompact(value), '']}
-            />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={formatMoneyCompact} />
+            <Tooltip content={<FinancialTooltip />} cursor={{ fill: '#0164b4', fillOpacity: 0.06, stroke: '#cbd5e1', strokeDasharray: '3 3' }} />
             <Legend wrapperStyle={{ fontSize: '10px', fontWeight: 600 }} />
             {keys[0] && <Bar dataKey={keys[0]} fill="#94a3b8" radius={[4, 4, 0, 0]} barSize={28} />}
             {keys[1] && <Bar dataKey={keys[1]} fill="#0164B4" radius={[4, 4, 0, 0]} barSize={28} />}

@@ -27,26 +27,26 @@ export function DrilldownModal({
           {drilldown.transactions.length === 0 ? (
             <div className="p-8 text-center text-gray-500">Nenhum lançamento encontrado.</div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-100">
+            <table className="report-ledger min-w-full divide-y divide-gray-100">
               <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Valor</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
+                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Valor</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {drilldown.transactions.map((t) => (
                   <tr key={t.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-3 text-sm text-gray-500">
+                    <td className="px-3 py-2 text-xs text-gray-500">
                       {formatDateBR(activeReport === ReportType.CASH_FLOW ? t.paymentDate ?? t.date : t.competenceDate)}
                     </td>
-                    <td className="px-6 py-3 text-sm text-gray-900">
+                    <td className="px-3 py-2 text-xs text-gray-900">
                       <p className="font-medium">{t.description}</p>
                       {t.supplierName ? <p className="text-xs text-gray-400">{t.supplierName}</p> : null}
                     </td>
                     <td
-                      className="px-6 py-3 text-sm text-right font-medium text-gray-900"
+                      className="px-3 py-2 text-xs text-right font-medium text-gray-900"
                     >
                       {t.type === TransactionType.INCOME ? '+' : '-'} R${' '}
                       {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -56,10 +56,10 @@ export function DrilldownModal({
               </tbody>
               <tfoot className="bg-gray-50 sticky bottom-0">
                 <tr>
-                  <td colSpan={2} className="px-6 py-3 text-sm font-bold text-gray-900 text-right">
+                  <td colSpan={2} className="px-3 py-2 text-xs font-bold text-gray-900 text-right">
                     Total:
                   </td>
-                  <td className="px-6 py-3 text-sm font-bold text-gray-900 text-right">
+                  <td className="px-3 py-2 text-xs font-bold text-gray-900 text-right">
                     R${' '}
                     {drilldown.transactions
                       .reduce((acc, t) => acc + (t.type === TransactionType.INCOME ? t.amount : -t.amount), 0)

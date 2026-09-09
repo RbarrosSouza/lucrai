@@ -693,8 +693,11 @@ const Transactions: React.FC = () => {
 
       if (!matchesSearch) return false;
 
-      // === HYBRID DATE FILTERING LOGIC ===
-      const compareDate = t.date;
+      // Pagamentos pertencem ao período em que foram pagos, como no fluxo de caixa.
+      // Em aberto (ou sem data de pagamento), a referência continua sendo o vencimento.
+      const compareDate = t.status === TransactionStatus.PAID && t.paymentDate
+        ? t.paymentDate
+        : t.date;
       const today = todayISOInSaoPaulo();
 
       // Funcionalidade 1: Filtro dedicado "Lançamentos Futuros"
@@ -712,13 +715,14 @@ const Transactions: React.FC = () => {
           : filters.endDate;
 
         // Применяет range de datas normal ou expandido
-        if (compareDate < filters.startDate || compareDate > effectiveEndDate) return false;
+        if (filters.startDate && compareDate < filters.startDate) return false;
+        if (effectiveEndDate && compareDate > effectiveEndDate) return false;
       }
 
       // Dashboard drilldown: vencendo em 7 dias (por vencimento)
       if (urlDueNext7) {
         const end = addDaysISO(today, 7);
-        if (compareDate < today || compareDate > end) return false;
+        if (t.date < today || t.date > end) return false;
       }
 
       if (filters.type !== 'ALL' && t.type !== filters.type) return false;
@@ -1056,7 +1060,7 @@ const Transactions: React.FC = () => {
   const renderStatusBadge = (tStatus: TransactionStatus, tType: TransactionType) => {
     switch (tStatus) {
       case TransactionStatus.PAID:
-        return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-green-100 text-green-800"><CheckCircle size={10} className="mr-1" />{tType === TransactionType.INCOME ? 'Recebido' : 'Pago'}</span>;
+        return <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${tType === TransactionType.INCOME ? 'bg-green-100 text-green-800' : 'bg-sky-100 text-sky-800'}`}><CheckCircle size={10} className="mr-1" />{tType === TransactionType.INCOME ? 'Recebido' : 'Pago'}</span>;
       case TransactionStatus.PENDING:
         return <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-gray-100 text-gray-600"><Clock size={10} className="mr-1" />Aberto</span>;
       case TransactionStatus.LATE:
@@ -1131,47 +1135,15 @@ const Transactions: React.FC = () => {
         </div>
       </div>
 
-      {/* Desktop: cards em grid compacto */}
-      <div className="hidden md:grid grid-cols-3 gap-3">
-        <div className="bg-white/80 backdrop-blur px-4 py-3 rounded-2xl border border-white/60 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-[9px] uppercase tracking-widest font-bold text-slate-400">Realizado (Pago)</p>
-            <h3 className="tx-tracking text-lg font-semibold mt-0.5 text-slate-800 tabular-nums">
-              R$ {summary.paidNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </h3>
-          </div>
-          <div className="p-2 rounded-xl bg-slate-50 text-slate-400 border border-white/60">
-            <CheckCircle size={16} />
-          </div>
-        </div>
-        <div className="bg-white/80 backdrop-blur px-4 py-3 rounded-2xl border border-white/60 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-[9px] uppercase tracking-widest font-bold text-slate-400">Em Aberto (Previsto)</p>
-            <h3 className="tx-tracking text-lg font-semibold mt-0.5 text-slate-800 tabular-nums">
-              R$ {summary.openNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </h3>
-          </div>
-          <div className="p-2 rounded-xl bg-slate-50 text-slate-400 border border-white/60">
-            <Clock size={16} />
-          </div>
-        </div>
-        <div className="bg-white/80 backdrop-blur px-4 py-3 rounded-2xl border border-white/60 shadow-sm flex items-center justify-between">
-          <div>
-            <p className="text-[9px] uppercase tracking-widest font-bold text-slate-400">Atrasado / Vencido</p>
-            <h3 className="tx-tracking text-lg font-semibold mt-0.5 text-slate-800 tabular-nums">
-              R$ {summary.overdueValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </h3>
-            <p className="text-[9px] text-slate-500">{summary.overdueCount} lançamentos</p>
-          </div>
-          <div className="p-2 rounded-xl bg-slate-50 text-slate-400 border border-white/60">
-            <AlertTriangle size={16} />
-          </div>
-        </div>
+      <div className="hidden md:flex items-center gap-6 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs">
+        <span className="text-slate-500">Realizado <strong className="ml-2 text-sm text-slate-900 tabular-nums">R$ {summary.paidNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
+        <span className="text-slate-500">Em aberto <strong className="ml-2 text-sm text-slate-900 tabular-nums">R$ {summary.openNet.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong></span>
+        <span className="text-slate-500">Atrasado <strong className="ml-2 text-sm text-slate-900 tabular-nums">R$ {summary.overdueValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong> · {summary.overdueCount} lançamentos</span>
       </div>
 
       {/* 2. ACTIONS & FILTERS BAR - compacto mobile */}
-      <div className="bg-white/80 backdrop-blur p-2.5 md:p-3 rounded-xl md:rounded-2xl shadow-sm border border-white/60">
-        <div className="flex flex-col md:flex-row gap-2 md:gap-4 items-stretch md:items-center justify-between">
+      <div className="bg-white/80 backdrop-blur p-2.5 md:p-2 rounded-xl md:rounded-lg shadow-sm border border-white/60">
+        <div className="flex flex-col md:flex-row gap-2 md:gap-2 items-stretch md:items-center justify-between">
           {/* Mobile: Filtro de tipo + ícones na mesma linha */}
           <div className="md:hidden flex items-center justify-between gap-2">
             {/* QUICK TYPE FILTER */}
@@ -1240,24 +1212,24 @@ const Transactions: React.FC = () => {
           </div>
 
           {/* Desktop: Layout original */}
-          <div className="hidden md:flex flex-row gap-4 flex-1">
+          <div className="hidden md:flex flex-row gap-2 flex-1">
             {/* QUICK TYPE FILTER */}
             <div className="flex bg-gray-100 p-1 rounded-lg self-center">
               <button
                 onClick={() => setFilters({ ...filters, type: 'ALL' })}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${filters.type === 'ALL' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${filters.type === 'ALL' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Tudo
               </button>
               <button
                 onClick={() => setFilters({ ...filters, type: 'INCOME' })}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${filters.type === 'INCOME' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${filters.type === 'INCOME' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Receitas
               </button>
               <button
                 onClick={() => setFilters({ ...filters, type: 'EXPENSE' })}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${filters.type === 'EXPENSE' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500 hover:text-gray-700'}`}
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition-all ${filters.type === 'EXPENSE' ? 'bg-white shadow text-lucrai-700' : 'text-gray-500 hover:text-gray-700'}`}
               >
                 Despesas
               </button>
@@ -1277,13 +1249,13 @@ const Transactions: React.FC = () => {
             </button>
 
             <div className="relative flex-1">
-              <Search size={16} className="absolute left-3 top-3 text-gray-400" />
+              <Search size={16} className="absolute left-3 top-2 text-gray-400" />
               <input
                 type="text"
                 placeholder="Buscar por descrição, fornecedor ou documento..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 block w-full rounded-xl border-gray-200 border bg-gray-50 text-sm focus:border-lucrai-500 focus:ring-lucrai-200 p-2.5"
+                className="pl-10 block w-full rounded-xl border-gray-200 border bg-gray-50 text-xs focus:border-lucrai-500 focus:ring-lucrai-200 p-1.5"
               />
             </div>
           </div>
@@ -1292,21 +1264,21 @@ const Transactions: React.FC = () => {
           <div className="hidden md:flex gap-2 justify-end">
             <button
               onClick={fetchInitialData}
-              className="p-2.5 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50"
+              className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50"
               title="Atualizar"
             >
               <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
             </button>
             <button
               onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-colors ${isFilterPanelOpen ? 'bg-lucrai-50 border-lucrai-200 text-lucrai-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium border transition-colors ${isFilterPanelOpen ? 'bg-lucrai-50 border-lucrai-200 text-lucrai-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
             >
               <Filter size={16} />
-              <span>Filtros Avançados</span>
+              <span>Filtros</span>
             </button>
             <button
               onClick={handleResetForm}
-              className="flex items-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-4 py-2.5 rounded-2xl text-sm font-bold shadow-float transition-all hover:-translate-y-0.5"
+              className="flex items-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow-float transition-all hover:-translate-y-0.5"
             >
               <Plus size={16} />
               <span>Novo Lançamento</span>
@@ -1315,13 +1287,13 @@ const Transactions: React.FC = () => {
         </div>
 
         {dashboardDrilldownActive ? (
-          <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-2xl bg-lucrai-50 border border-lucrai-100 px-4 py-3">
-            <div className="text-sm text-lucrai-800 font-semibold">
+          <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg bg-lucrai-50 border border-lucrai-100 px-4 py-3">
+            <div className="text-xs text-lucrai-800 font-semibold">
               Filtro aplicado via Dashboard. Você pode ajustar nos filtros ou limpar para voltar ao padrão.
             </div>
             <button
               onClick={() => navigate('/transactions', { replace: true })}
-              className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-white border border-lucrai-200 text-sm font-bold text-lucrai-700 hover:bg-white/80"
+              className="self-start sm:self-auto px-3 py-1.5 rounded-xl bg-white border border-lucrai-200 text-xs font-bold text-lucrai-700 hover:bg-white/80"
             >
               Limpar filtro
             </button>
@@ -1331,6 +1303,9 @@ const Transactions: React.FC = () => {
         {/* EXPANDABLE FILTER PANEL */}
         {isFilterPanelOpen && (
           <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 md:grid-cols-4 gap-4 animate-in slide-in-from-top-2">
+            <p className="md:col-span-4 text-xs text-gray-500">
+              O período considera a data de pagamento dos lançamentos pagos e o vencimento dos demais.
+            </p>
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">Período (Início)</label>
               <input type="date" className="w-full text-sm border-gray-200 rounded-lg" value={filters.startDate} onChange={e => setFilters({ ...filters, startDate: e.target.value })} />
@@ -1381,7 +1356,7 @@ const Transactions: React.FC = () => {
       </div>
 
       {/* 3. TABLE */}
-      <div className="flex-1 bg-white/80 backdrop-blur rounded-xl md:rounded-3xl shadow-premium border border-white/60 flex flex-col overflow-hidden">
+      <div className="flex-1 bg-white/80 backdrop-blur rounded-xl md:rounded-lg shadow-sm border border-white/60 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto">
           {isLoading && transactions.length === 0 ? (
             <div className="p-8 text-center text-gray-500">Carregando lançamentos...</div>
@@ -1405,25 +1380,18 @@ const Transactions: React.FC = () => {
               </div>
 
               {/* DESKTOP: Table View */}
-              <table className="hidden md:table min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+              <table className="tx-ledger hidden md:table w-full text-xs">
+                <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                   <tr>
-                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400" aria-sort={sortConfig?.key === 'dueDate' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                      <SortHeader sortKey="dueDate">Vencimento</SortHeader>
-                    </th>
-                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400" aria-sort={sortConfig?.key === 'description' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                      <SortHeader sortKey="description">Descrição / Documento</SortHeader>
-                    </th>
-                    <th className="px-6 py-4 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400" aria-sort={sortConfig?.key === 'supplier' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                      <SortHeader sortKey="supplier">Fornecedor / Categorização</SortHeader>
-                    </th>
-                    <th className="px-6 py-4 text-right text-[10px] uppercase tracking-widest font-bold text-slate-400" aria-sort={sortConfig?.key === 'amount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                      <SortHeader sortKey="amount" align="right">Valor</SortHeader>
-                    </th>
-                    <th className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-400" aria-sort={sortConfig?.key === 'paymentDate' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}>
-                      <SortHeader sortKey="paymentDate" align="center">Status / Pagamento</SortHeader>
-                    </th>
-                    <th className="px-6 py-4 text-center text-[10px] uppercase tracking-widest font-bold text-slate-400">Ações</th>
+                    <th aria-sort={sortConfig?.key === 'paymentDate' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><SortHeader sortKey="paymentDate">Pagamento</SortHeader></th>
+                    <th aria-sort={sortConfig?.key === 'dueDate' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><SortHeader sortKey="dueDate">Vencimento</SortHeader></th>
+                    <th>Competência</th>
+                    <th aria-sort={sortConfig?.key === 'description' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><SortHeader sortKey="description">Descrição</SortHeader></th>
+                    <th aria-sort={sortConfig?.key === 'supplier' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><SortHeader sortKey="supplier">Fornecedor</SortHeader></th>
+                    <th>Banco / Método</th>
+                    <th aria-sort={sortConfig?.key === 'amount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}><SortHeader sortKey="amount" align="right">Valor</SortHeader></th>
+                    <th>Status</th>
+                    <th><span className="sr-only">Ações</span></th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-100">
@@ -1434,74 +1402,19 @@ const Transactions: React.FC = () => {
                     const paymentMethodLabel = getPaymentMethodLabel(t.paymentMethod);
                     return (
                       <tr key={t.id} className="hover:bg-slate-50 transition-colors group">
-                        <td className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap">
-                          <div className="font-medium">{formatDateBR(t.date)}</div>
-                          <div className="text-xs text-gray-400">Comp: {formatDateBR(t.competenceDate)}</div>
+                        <td className="whitespace-nowrap tabular-nums">{t.status === TransactionStatus.PAID ? formatDateBR(t.paymentDate) || '—' : '—'}</td>
+                        <td className="whitespace-nowrap tabular-nums text-slate-500">{formatDateBR(t.date)}</td>
+                        <td className="whitespace-nowrap tabular-nums text-slate-500">{formatDateBR(t.competenceDate)}</td>
+                        <td>
+                          <button type="button" onClick={() => handleEdit(t)} className="block max-w-[260px] truncate text-left font-medium text-slate-900 hover:text-lucrai-700 hover:underline" title={[t.description, t.documentNumber && `Documento: ${t.documentNumber}`, t.installments && `Parcela ${t.installments.current}/${t.installments.total}`].filter(Boolean).join(' · ')}>
+                            {t.description}
+                          </button>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-semibold text-gray-900">{t.description}</span>
-                            {t.documentNumber && (
-                              <span className="mt-0.5 inline-flex items-center gap-0.5 self-start text-[10px] bg-gray-100 text-gray-600 px-1.5 rounded">
-                                <FileText size={8} /> {t.documentNumber}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500 align-top">
-                          <div className="flex flex-col gap-1 min-w-0">
-                            <span className="text-xs text-gray-700 inline-flex items-center gap-1 min-w-0">
-                              <Building size={10} className="shrink-0" />
-                              <span className="truncate font-medium">{supplierLabel}</span>
-                            </span>
-                            <div className="flex items-center gap-1 flex-wrap">
-                              {ccName && (
-                                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[11px] truncate max-w-[180px]">
-                                  {ccName}
-                                </span>
-                              )}
-                              {leafName && (
-                                <span className="bg-lucrai-50 text-lucrai-700 px-2 py-0.5 rounded text-[11px] truncate max-w-[180px]">
-                                  {leafName}
-                                </span>
-                              )}
-                              {!ccName && <span className="text-[11px] text-gray-400">-</span>}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-right font-bold text-gray-900 whitespace-nowrap tabular-nums tx-tracking">
-                          {formatAmount(t)}
-                          {t.installments && (
-                            <div className="text-[10px] font-normal text-gray-400 mt-0.5">
-                              Parc. {t.installments.current}/{t.installments.total}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {renderStatusBadge(t.status, t.type)}
-                          {t.status === TransactionStatus.PAID && t.paymentDate && (
-                            <div className="text-[10px] text-gray-400 mt-1">
-                              Pg: {formatDateBR(t.paymentDate)}
-                            </div>
-                          )}
-                          {(bankAccountLabel || paymentMethodLabel) && (
-                            <div className="mt-1.5 flex flex-col items-center gap-0.5">
-                              {bankAccountLabel && (
-                                <span className="inline-flex max-w-[180px] items-center gap-1 text-[10px] text-slate-600">
-                                  <Landmark size={10} className="shrink-0 text-slate-400" />
-                                  <span className="min-w-0 truncate">{bankAccountLabel}</span>
-                                </span>
-                              )}
-                              {paymentMethodLabel && (
-                                <span className="inline-flex max-w-[180px] items-center gap-1 text-[10px] text-lucrai-700">
-                                  <CreditCard size={10} className="shrink-0 text-lucrai-500" />
-                                  <span className="min-w-0 truncate">{paymentMethodLabel}</span>
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-center">
+                        <td title={[supplierLabel, ccName, leafName].filter(Boolean).join(' · ')}><span className="block max-w-[200px] truncate text-slate-600">{supplierLabel}</span></td>
+                        <td className="whitespace-nowrap text-slate-500">{bankAccountLabel || '—'}{paymentMethodLabel && <span className="ml-1 text-slate-400">· {paymentMethodLabel}</span>}</td>
+                        <td className="text-right font-semibold whitespace-nowrap tabular-nums">{formatAmount(t)}</td>
+                        <td className="whitespace-nowrap">{renderStatusBadge(t.status, t.type)}</td>
+                        <td className="text-center">
                           <div className="relative inline-flex" data-row-menu-root="true">
                             <button
                               type="button"

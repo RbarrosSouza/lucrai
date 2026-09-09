@@ -1,3 +1,4 @@
+import { FinancialTooltip } from './FinancialTooltip';
 import React, { useMemo } from 'react';
 import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { Category, Transaction } from '../../../types';
@@ -92,21 +93,9 @@ export function MarginEvolutionChart({ categories, trendSeries, seriesTxs, basis
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} />
-            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={formatMoneyCompact} />
-            <Tooltip
-              contentStyle={{
-                borderRadius: '12px',
-                border: 'none',
-                background: '#1E293B',
-                color: '#fff',
-                fontSize: '11px',
-              }}
-              formatter={(value: number, name: string) => {
-                if (name === 'margem') return [`${value}%`, 'Margem'];
-                return [formatMoneyCompact(value), name === 'custoFixo' ? 'Custo Fixo' : 'Custo Variável'];
-              }}
-            />
+            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} />
+            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 11 }} tickFormatter={formatMoneyCompact} />
+            <Tooltip content={<FinancialTooltip />} cursor={{ fill: '#0164b4', fillOpacity: 0.06, stroke: '#cbd5e1', strokeDasharray: '3 3' }} />
             <Legend
               wrapperStyle={{ fontSize: '10px', fontWeight: 600 }}
               formatter={(value) => {

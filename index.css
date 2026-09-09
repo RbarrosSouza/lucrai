@@ -62,3 +62,15 @@ body {
 .safe-area-pb {
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
+
+/* Compact desktop financial ledger. */
+.transactions-page .tx-ledger th { padding: 9px 10px; text-align: left; font-size: 11px; font-weight: 600; color: #64748b; white-space: nowrap; }
+.transactions-page .tx-ledger td { padding: 5px 10px; height: 38px; vertical-align: middle; }
+.transactions-page .tx-ledger tbody tr:nth-child(even) { background: #f8fafc; }
+.transactions-page .tx-ledger tbody tr:hover { background: #eff6ff; }
+.transactions-page .tx-ledger td:last-child button { padding: 4px; }
+
+/* Dense report rows retain category indentation and subtotal emphasis. */
+.report-ledger tbody td { height: 36px; vertical-align: middle; }
+.report-ledger tbody tr:hover { background-color: #eff6ff; }
+.report-ledger th { padding-top: 9px; padding-bottom: 9px; }

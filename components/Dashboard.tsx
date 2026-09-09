@@ -1,4 +1,7 @@
+import { PayablesPanel } from './dashboard/PayablesPanel';
 import React, { useMemo, useState } from 'react';
+import MonthPicker from './MonthPicker';
+import type { DashboardBasis } from './dashboard/dashboardTypes';
 import { RefreshCw } from 'lucide-react';
 import { useOrgProfile } from './org/OrgProfileContext';
 import { todayISOInSaoPaulo } from '../services/dates';
@@ -19,12 +22,13 @@ const Dashboard: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const today = useMemo(() => todayISOInSaoPaulo(), []);
 
-  const selectedMonth = useMemo(() => today.slice(0, 7), [today]);
+  const [selectedMonth, setSelectedMonth] = useState(() => today.slice(0, 7));
+  const [basis, setBasis] = useState<DashboardBasis>('ACCRUAL');
   const selectedYear = useMemo(() => Number(today.slice(0, 4)), [today]);
 
   const { error, categories, costCenters, budgets, periodTxs, prevPeriodTxs, trendSeries, kpis, comparisons, reload } =
     useDashboardData({
-      basis: 'ACCRUAL',
+      basis,
       periodMode: 'MONTH',
       selectedMonth,
       selectedYear,
@@ -55,24 +59,27 @@ const Dashboard: React.FC = () => {
   });
 
   return (
-    <div className="space-y-3 md:space-y-5">
+    <div className="space-y-3">
       {/* Header compacto mobile */}
-      <div className="bg-white/80 backdrop-blur rounded-2xl md:rounded-3xl border border-white/60 shadow-premium p-4 md:p-6">
-        <div className="flex items-center justify-between gap-3">
+      <div className="bg-white/80 backdrop-blur rounded-lg border border-white/60 shadow-sm px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
             <div className="text-[9px] md:text-[10px] uppercase tracking-widest font-bold text-slate-400">Visão geral</div>
-            <h1 className="text-lg md:text-2xl font-bold text-slate-800 truncate">
+            <h1 className="text-base md:text-lg font-bold text-slate-800 truncate">
               Bom dia, {displayLabel}!
             </h1>
-            <span className="inline-block mt-1 px-2 py-1 md:px-3 md:py-1.5 rounded-xl md:rounded-2xl bg-white/70 border border-white/70 text-slate-700 text-[11px] md:text-xs font-semibold capitalize shadow-sm">
-              {periodLabel}
-            </span>
         </div>
 
+          <div className="flex flex-wrap items-center gap-2">
+            <select aria-label="Base dos indicadores" value={basis} onChange={(e) => setBasis(e.target.value as DashboardBasis)} className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs">
+              <option value="ACCRUAL">Competência</option><option value="CASH">Pagamento</option>
+            </select>
+            <MonthPicker value={selectedMonth} onChange={setSelectedMonth} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs capitalize" iconSize={14} />
+          </div>
           {/* Botão Sincronizar - só desktop */}
            <button 
              onClick={handleRefresh}
-            className="hidden md:flex items-center justify-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-5 py-3 rounded-2xl text-sm font-bold shadow-float transition-all hover:-translate-y-0.5"
+            className="hidden md:flex items-center justify-center gap-2 bg-lucrai-500 hover:bg-lucrai-600 text-white px-3 py-2 rounded-lg text-xs font-bold shadow-float transition-all hover:-translate-y-0.5"
            >
              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
             <span className="whitespace-nowrap">{isRefreshing ? 'Atualizando…' : 'Sincronizar'}</span>
@@ -95,9 +102,9 @@ const Dashboard: React.FC = () => {
         ) : null}
       </div>
 
-      <InsightBanner insight={insight} loading={insightsLoading} />
+      <OverviewTab notice={<InsightBanner insight={insight} loading={insightsLoading} />} basis={basis} kpis={kpis} comparisons={comparisons} trendSeries={trendSeries} />
 
-      <OverviewTab basis="ACCRUAL" kpis={kpis} comparisons={comparisons} trendSeries={trendSeries} />
+      <PayablesPanel refreshKey={isRefreshing} />
     </div>
   );
 };
