@@ -1,3 +1,4 @@
+import { ExportTransactions } from './transactions/ExportTransactions';
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -610,18 +611,20 @@ const Transactions: React.FC = () => {
         );
       }
 
-      // 2. Fetch Transactions (With filter? For now, fetch all or latest 200 to keep it simple, filtering is client side)
-      // Ideally filtering should be server side for scale.
-      const { data: tData, error: tError } = await supabase
-        .from('transactions')
-        .select('*')
-        .order('date', { ascending: false });
-
-      if (tError) throw tError;
+      const tData: any[] = [];
+      for (let offset = 0; ; offset += 500) {
+        const { data, error } = await supabase.from('transactions').select('*')
+          .order('date', { ascending: false }).order('id').range(offset, offset + 499);
+        if (error) throw error;
+        tData.push(...(data || []));
+        if (!data || data.length < 500) break;
+      }
 
       if (tData) {
         const mappedT = tData.map((t: any) => ({
           id: t.id,
+          code: t.code,
+          installments: t.installments,
           description: t.description,
           amount: t.amount,
           date: t.date,
@@ -1259,6 +1262,21 @@ const Transactions: React.FC = () => {
               />
             </div>
           </div>
+
+          <div className="flex justify-end"><ExportTransactions transactions={displayedTransactions} suppliers={suppliers} banks={bankAccounts} categories={categories} costCenters={costCenters} disabled={isLoading} summary={[
+  filters.showFutureOnly ? 'Futuros em aberto, sem limite de período' : `Período: ${formatDateBR(filters.startDate)} a ${formatDateBR(filters.status === TransactionStatus.PENDING ? addMonthsISO(filters.endDate, 12) : filters.endDate)}`,
+  'Pagos pela data de pagamento; demais pelo vencimento',
+  filters.type === 'ALL' ? 'Receitas e despesas' : filters.type === 'INCOME' ? 'Receitas' : 'Despesas',
+  filters.status && `Status: ${filters.status === 'PAID' ? 'Pago / recebido' : filters.status === 'LATE' ? 'Atrasado' : 'Em aberto'}`,
+  searchTerm && `Busca: ${searchTerm}`,
+  filters.supplierId && `Fornecedor: ${suppliers.find(x => x.id === filters.supplierId)?.name}`,
+  filters.bankId && `Banco: ${bankAccounts.find(x => x.id === filters.bankId)?.name}`,
+  filters.costCenterId && `Centro: ${costCenters.find(x => x.id === filters.costCenterId)?.name}`,
+  filters.paymentMethod && `Forma: ${getPaymentMethodLabel(filters.paymentMethod as PaymentMethod)}`,
+  urlCategoryId && `Categoria: ${categories.find(x => x.id === urlCategoryId)?.name}`,
+  urlStatusOpen && 'Somente abertos', urlDueNext7 && 'Vencendo nos próximos 7 dias',
+  sortConfig ? `Ordem: ${{dueDate:'Vencimento',paymentDate:'Pagamento',description:'Descrição',supplier:'Fornecedor',amount:'Valor'}[sortConfig.key]} (${sortConfig.direction === 'asc' ? 'crescente' : 'decrescente'})` : 'Ordem da lista'
+].filter(Boolean).join(' · ')} /></div>
 
           {/* Desktop: Actions */}
           <div className="hidden md:flex gap-2 justify-end">
