@@ -1,5 +1,6 @@
+import ComparisonTab from './dashboard/ComparisonTab';
 import { PayablesPanel } from './dashboard/PayablesPanel';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useOrgProfile } from './org/OrgProfileContext';
 import { todayISOInSaoPaulo } from '../services/dates';
@@ -22,6 +23,9 @@ function formatMonthLabel(yyyyMm: string) {
 }
 
 export default function DashboardHub() {
+  const [activeTab, setActiveTab] = useState<'overview' | 'comparison'>('overview');
+  const [comparisonVisited, setComparisonVisited] = useState(false);
+  useEffect(() => { if (activeTab === 'comparison') setComparisonVisited(true); }, [activeTab]);
   const { displayLabel } = useOrgProfile();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const today = useMemo(() => todayISOInSaoPaulo(), []);
@@ -62,11 +66,11 @@ export default function DashboardHub() {
             <h1 className="text-base md:text-xl font-bold text-slate-800 truncate">
               {displayLabel}
             </h1>
-            <span className="text-[11px] md:text-sm text-slate-500 capitalize">{periodLabel}</span>
+            <span className="text-[11px] md:text-sm text-slate-500 capitalize" hidden={activeTab !== 'overview'}>{periodLabel}</span>
           </div>
 
           {/* Toggles - compactos em mobile */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className={`${activeTab === 'overview' ? 'hidden md:flex' : 'hidden'} items-center gap-3`}>
             <DashboardHeaderControlsCompact
               basis={basis}
               setBasis={setBasis}
@@ -87,7 +91,7 @@ export default function DashboardHub() {
           </div>
 
           {/* Mobile: toggles simplificados + ícone refresh */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className={`${activeTab === 'overview' ? 'flex md:hidden' : 'hidden'} items-center gap-2`}>
             <DashboardHeaderControlsCompact
               basis={basis}
               setBasis={setBasis}
@@ -115,6 +119,11 @@ export default function DashboardHub() {
         ) : null}
       </div>
 
+      <div className="flex gap-2 rounded-xl bg-white border border-gray-200 p-1" aria-label="Visualizações do Dashboard">
+        {(['overview', 'comparison'] as const).map(tab => <button key={tab} aria-pressed={activeTab === tab} onClick={() => setActiveTab(tab)} className={`rounded-lg px-5 py-2 text-sm font-semibold ${activeTab === tab ? 'bg-lucrai-50 text-lucrai-700' : 'text-gray-500 hover:bg-gray-50'}`}>{tab === 'overview' ? 'Visão geral' : 'Comparativo'}</button>)}
+      </div>
+      <div hidden={activeTab !== 'comparison'}>{activeTab === 'comparison' || comparisonVisited ? <ComparisonTab basis={basis} setBasis={setBasis}/> : null}</div>
+      <div hidden={activeTab !== 'overview'}>
       {/* Grid de Gráficos - 1 col mobile, 2 cols desktop */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-5">
         {/* 1. Receita vs Despesa + Saldo */}
@@ -150,6 +159,7 @@ export default function DashboardHub() {
       </div>
 
       <PayablesPanel refreshKey={isRefreshing} />
+      </div>
     </div>
   );
 }

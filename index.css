@@ -74,3 +74,121 @@ body {
 .report-ledger tbody td { height: 36px; vertical-align: middle; }
 .report-ledger tbody tr:hover { background-color: #eff6ff; }
 .report-ledger th { padding-top: 9px; padding-bottom: 9px; }
+
+/* Comparison uses the same compact rhythm as the transactions ledger.
+   Opaque row colors keep the frozen first column legible when scrolling. */
+.comparison-ledger thead th {
+  padding: 9px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+.comparison-ledger tbody tr { --comparison-row: #fff; }
+.comparison-ledger tbody tr:nth-child(even) { --comparison-row: #f8fafc; }
+.comparison-ledger tbody th,
+.comparison-ledger tbody td {
+  background: var(--comparison-row);
+  padding: 3px 10px;
+  height: 36px;
+  vertical-align: middle;
+  border-bottom: 1px solid #f1f5f9;
+}
+.comparison-ledger tbody td { padding: 0 2px; }
+.comparison-ledger tbody td > button {
+  min-height: 34px;
+  padding: 5px 8px;
+  border-radius: 0;
+}
+.comparison-ledger tbody tr.comparison-root {
+  --comparison-row: #eaf0f6;
+  font-weight: 600;
+  color: #334155;
+}
+.comparison-ledger tbody tr.comparison-root:not(:first-child) > * {
+  border-top: 2px solid #cbd5e1;
+}
+.comparison-ledger tbody tr.comparison-group {
+  --comparison-row: #f1f5f9;
+  font-weight: 600;
+  color: #475569;
+}
+.comparison-ledger tbody tr:hover { --comparison-row: #eff6ff; }
+.comparison-ledger tbody td > button:hover { background: #e0edf7; }
+.comparison-ledger tfoot th,
+.comparison-ledger tfoot td {
+  padding: 9px 10px;
+  font-size: 12px;
+  border-top: 1px solid #cbd5e1;
+}
+.comparison-ledger thead th:first-child,
+.comparison-ledger tbody th,
+.comparison-ledger tfoot th { border-right: 1px solid #e2e8f0; }
+@media (max-width: 767px) {
+  .comparison-ledger tbody th { max-width: 220px; white-space: normal; }
+  .comparison-ledger tbody td > button { min-height: 40px; }
+}
+
+/* DRE: consistent ledger density, with hierarchy across the full row. */
+.dre-ledger { font-size: 12px; font-variant-numeric: tabular-nums; }
+.dre-ledger thead th {
+  padding: 9px 10px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.dre-ledger tbody td { height: 36px; padding: 5px 10px; border-bottom: 1px solid #f1f5f9; }
+.dre-ledger tbody tr { background: #fff; }
+.dre-ledger tbody tr:nth-child(even) { background: #f8fafc; }
+.dre-ledger tbody tr.dre-group { background: #f1f5f9; }
+.dre-ledger tbody tr.dre-group > td { border-top: 1px solid #e2e8f0; }
+.dre-ledger tbody tr.dre-subtotal { background: #eaf0f6; }
+.dre-ledger tbody tr.dre-subtotal > td { border-top: 1px solid #cbd5e1; font-weight: 600; }
+.dre-ledger tbody tr:hover { background: #eff6ff; }
+.dre-ledger tbody tr.dre-final { background: #e4f4f5; color: #155e75; }
+.dre-ledger tbody tr.dre-final > td { height: 42px; border-top: 2px solid #15d2d0; }
+.dre-ledger th:last-child, .dre-ledger td:last-child { width: 110px; }
+.dre-ledger th:nth-child(2), .dre-ledger td:nth-child(2) { width: 200px; }
+
+/* Match the comparison's full-width hierarchy in both DRE views. */
+.dre-ledger tbody tr.dre-group { background: #eaf0f6; }
+.dre-ledger tbody tr.dre-subgroup { background: #f1f5f9; }
+.dre-ledger tbody tr.dre-group:not(:first-child) > td { border-top: 2px solid #cbd5e1; }
+.dre-ledger tbody tr.dre-subtotal { background: #e4f4f5; }
+.dre-ledger tbody tr:hover { background: #eff6ff; }
+.dre-annual tbody tr.dre-subtotal { --comparison-row: #e4f4f5; font-weight: 600; }
+.dre-annual tbody tr.dre-final { --comparison-row: #d9eef0; font-weight: 700; color: #155e75; }
+.dre-annual tbody tr.dre-subtotal > *, .dre-annual tbody tr.dre-final > * { border-top: 1px solid #b6dadd; }
+.dre-annual tbody tr.comparison-leaf > th { font-weight: 400; }
+
+/* Product typography: 14px body, 12px supporting text, 20px page headings.
+   Keep the browser root size unchanged so rem units and zoom remain usable. */
+.lucrai-app {
+  --ui-body: 0.875rem;
+  --ui-small: 0.75rem;
+  --ui-heading: 1.25rem;
+  font-size: var(--ui-body);
+  line-height: 1.45;
+}
+.lucrai-app main h1 { font-size: var(--ui-heading); line-height: 1.4; font-weight: 600; letter-spacing: -0.02em; }
+.lucrai-app main h2 { font-size: 1rem; line-height: 1.5; font-weight: 600; }
+.lucrai-app main h3 { font-size: var(--ui-body); line-height: 1.45; font-weight: 600; }
+.lucrai-app main :is(button, input, select, textarea) { font-size: var(--ui-body); }
+.lucrai-app main :is(.text-base, .text-lg):not(h1, h2, h3) { font-size: var(--ui-body); line-height: 1.45; }
+.lucrai-app main :is(.text-2xl, .text-3xl, .text-4xl, .text-5xl):not(h1, h2, h3) { font-size: 1.5rem; line-height: 1.3; }
+.lucrai-app main :is(.text-\[9px\], .text-\[10px\], .text-\[11px\]) { font-size: var(--ui-small); line-height: 1.4; }
+.lucrai-app main :is(table, .comparison-page) :is(button, input, select) { font-size: var(--ui-small); }
+.lucrai-app main table :is(th, td) { font-size: var(--ui-small); }
+.lucrai-app #app-sidebar svg { flex-shrink: 0; }
+.lucrai-app #app-sidebar nav > a,
+.lucrai-app #app-sidebar nav > div > button { font-size: var(--ui-body); line-height: 1.4; }
+.lucrai-app #app-sidebar nav a svg,
+.lucrai-app #app-sidebar nav > div > button > div > svg { stroke-width: 1.75; }
+@media (max-width: 767px) {
+  .lucrai-app main :is(input, select, textarea),
+  .lucrai-app main :is(table, .comparison-page) :is(input, select, textarea) { font-size: 1rem; }
+  .lucrai-app main :is(button, a) { touch-action: manipulation; }
+}

@@ -1,3 +1,4 @@
+import DREAnnual from './DREAnnual';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Calendar, ChevronDown, ChevronRight, Download, FileText, HelpCircle } from 'lucide-react';
 import MonthPicker from '../MonthPicker';
@@ -30,6 +31,7 @@ function findRootByAliases(roots: Category[], aliases: string[]): Category | und
 }
 
 export default function Reports() {
+  const [drePeriod, setDrePeriod] = useState<'MONTH' | 'YEAR'>('MONTH');
   const [activeReport, setActiveReport] = useState<ReportType>(ReportType.DRE_ACCRUAL);
   const [cashFlowMode, setCashFlowMode] = useState<CashFlowViewMode>('DAILY');
   const [selectedMonth, setSelectedMonth] = useState<string>(getCurrentMonthYYYYMM());
@@ -127,7 +129,7 @@ export default function Reports() {
 
     return (
       <React.Fragment key={category.id}>
-        <tr className={`hover:bg-slate-50 transition-colors ${level === 0 ? 'bg-gray-50/60 font-medium' : ''}`}>
+        <tr className={`hover:bg-slate-50 transition-colors ${level === 0 ? 'dre-group font-medium' : hasChildren ? 'dre-subgroup font-medium' : 'dre-detail'}`}>
           <td
             className="px-3 py-2 whitespace-nowrap text-xs text-gray-900 border-l-4 border-transparent hover:border-lucrai-400 cursor-pointer"
             onClick={handleClick}
@@ -169,7 +171,7 @@ export default function Reports() {
   };
 
   const renderResultLine = (label: string, value: number, percent: number, colorClass: string = 'text-gray-900') => (
-    <tr className="bg-gray-50 border-t border-b border-gray-200 font-bold">
+    <tr className="dre-subtotal font-semibold">
       <td className="px-3 py-2 text-xs text-gray-900">(=) {label}</td>
       <td className={`px-3 py-2 text-xs tabular-nums text-right ${colorClass}`}>{formatMoney(value)}</td>
       <td className="px-3 py-2 text-xs tabular-nums text-right text-gray-500">{Number.isFinite(percent) ? `${percent.toFixed(1)}%` : '-'}</td>
@@ -248,7 +250,7 @@ export default function Reports() {
           />
         </div>
         <div className="hidden md:block overflow-x-auto">
-          <table className="report-ledger min-w-full divide-y divide-gray-200">
+          <table className="report-ledger dre-ledger min-w-full">
           <thead className="bg-gray-50">
             <tr>
               <th className="px-3 py-2 text-left text-[10px] uppercase tracking-widest font-bold text-slate-400">Descrição</th>
@@ -273,7 +275,7 @@ export default function Reports() {
             )}
 
             {catNaoOp ? (
-              <tr className="bg-gray-50/50 font-medium">
+              <tr className="dre-group font-medium">
                 <td className="px-3 py-2 text-xs text-gray-900">(+/-) Resultado Não Operacional</td>
                 <td className="px-3 py-2 text-xs tabular-nums text-right text-gray-900">
                   {formatMoney(metrics.naoOpNet)}
@@ -285,12 +287,12 @@ export default function Reports() {
             {renderResultLine('Lucro Antes do IR (LAIR)', metrics.LAIR, metrics.pctLAIR, 'text-gray-900')}
             {catImpostosLucro && renderCategoryRow(catImpostosLucro, basis, 0, 'MINUS')}
 
-            <tr className="text-white font-bold text-lg bg-lucrai-500">
+            <tr className="dre-final font-bold text-sm">
               <td className="px-3 py-2">(=) {basis === 'CASH' ? 'Geração de Caixa Líquida' : 'Lucro Líquido'}</td>
-              <td className={`px-3 py-2 text-right ${metrics.lucroLiquido >= 0 ? 'text-white' : 'text-rose-100'}`}>
+              <td className={`px-3 py-2 text-right ${metrics.lucroLiquido >= 0 ? 'text-lucrai-800' : 'text-rose-700'}`}>
                 {formatMoney(metrics.lucroLiquido)}
               </td>
-              <td className="px-3 py-2 text-right text-white/80">{metrics.pctLucroLiquido.toFixed(1)}%</td>
+              <td className="px-3 py-2 text-right text-lucrai-800">{metrics.pctLucroLiquido.toFixed(1)}%</td>
             </tr>
           </tbody>
         </table>
@@ -432,7 +434,7 @@ export default function Reports() {
           {error ? <p className="text-xs text-rose-700 mt-1">{error}</p> : null}
         </div>
 
-        <div className="flex gap-2">
+        <div className={activeReport === ReportType.DRE_ACCRUAL && drePeriod === 'YEAR' ? 'hidden' : 'flex gap-2'}>
           <MonthPicker
             value={selectedMonth}
             onChange={setSelectedMonth}
@@ -507,7 +509,9 @@ export default function Reports() {
           </div>
         )}
 
-        <div className="min-h-[400px]">
+        {activeReport === ReportType.DRE_ACCRUAL && <div className="flex gap-1 p-3 border-b border-gray-100" aria-label="Período da DRE">{(['MONTH', 'YEAR'] as const).map(period => <button key={period} aria-pressed={drePeriod === period} onClick={() => setDrePeriod(period)} className={`rounded-lg px-4 py-1.5 text-xs font-semibold ${drePeriod === period ? 'bg-lucrai-50 text-lucrai-700' : 'text-gray-500 hover:bg-gray-50'}`}>{period === 'MONTH' ? 'Mensal' : 'Anual'}</button>)}</div>}
+        <div hidden={activeReport !== ReportType.DRE_ACCRUAL || drePeriod !== 'YEAR'}>{drePeriod === 'YEAR' && <DREAnnual />}</div>
+        <div className="min-h-[400px]" hidden={activeReport === ReportType.DRE_ACCRUAL && drePeriod === 'YEAR'}>
           {isLoading && categories.length === 0 ? (
             <div className="p-12 text-center text-gray-500">Carregando DRE...</div>
           ) : (

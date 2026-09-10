@@ -14,8 +14,7 @@ import {
   Users,
   X,
   LogOut,
-  PanelLeftClose,
-  PanelLeftOpen,
+  PanelLeft,
 } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import { OrgProfileProvider, useOrgProfile } from '../org/OrgProfileContext';
@@ -48,15 +47,15 @@ const NavItem = ({
       onClick={onClick}
       title={collapsed ? label : undefined}
       aria-label={label}
-      className={`group relative flex h-10 items-center rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-white/20 min-w-0 ${
-        collapsed ? 'justify-center px-0' : 'gap-3 px-4'
+      className={`group relative flex h-10 items-center rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-white/20 min-w-0 ${
+        collapsed ? 'justify-center px-0' : 'gap-2.5 px-3'
       } ${
         isActive
           ? 'bg-white/10 text-white font-semibold shadow-glow'
           : 'text-white/85 hover:bg-white/8 hover:text-white'
       }`}
     >
-      <Icon size={20} className={isActive ? 'text-lucrai-200' : 'text-white/80'} />
+      <Icon size={18} className={isActive ? 'text-lucrai-200 shrink-0' : 'text-white/80 shrink-0'} />
       {!collapsed && <span className="whitespace-nowrap">{label}</span>}
       {collapsed && (
         <span className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-lg bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
@@ -112,7 +111,7 @@ function AppLayoutBody() {
   }, [location.pathname]);
 
   return (
-    <div className="flex h-screen overflow-hidden font-sans bg-brand-background">
+    <div className="lucrai-app flex h-screen overflow-hidden font-sans bg-brand-background">
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-gray-800/50 z-20 md:hidden"
@@ -123,7 +122,7 @@ function AppLayoutBody() {
       <aside
         id="app-sidebar"
         className={`hidden md:block fixed inset-y-0 left-0 z-30 bg-brand-deep border-r border-white/5 transform transition-[width,transform] duration-300 ease-in-out md:relative md:translate-x-0 ${
-          sidebarCollapsed ? 'md:w-20' : 'md:w-56'
+          sidebarCollapsed ? 'md:w-16' : 'md:w-56'
         } ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
@@ -131,7 +130,7 @@ function AppLayoutBody() {
         {/* textura sutil (premium) */}
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(1,100,180,0.18),transparent_55%)] opacity-60" />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_90%,rgba(255,255,255,0.06),transparent_55%)] opacity-60" />
-        <div className={`relative flex items-center justify-center h-24 border-b border-white/10 ${sidebarCollapsed ? 'px-3' : 'px-6'}`}>
+        <div className={`relative flex items-center h-20 border-b border-white/10 ${sidebarCollapsed ? 'justify-center px-2' : 'justify-between px-4'}`}>
           {/* Mobile close */}
           <button
             onClick={() => setSidebarOpen(false)}
@@ -141,26 +140,16 @@ function AppLayoutBody() {
             <X size={24} />
           </button>
 
-          <button
-            type="button"
-            onClick={() => setSidebarCollapsed((v) => !v)}
-            className="hidden md:flex absolute -right-3 top-8 z-40 h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-brand-deep shadow-md transition-colors hover:bg-lucrai-50 focus:outline-none focus:ring-2 focus:ring-lucrai-200"
-            aria-controls="app-sidebar"
-            aria-expanded={!sidebarCollapsed}
-            aria-label={sidebarCollapsed ? 'Expandir menu lateral' : 'Colapsar menu lateral'}
-            title={sidebarCollapsed ? 'Expandir menu lateral' : 'Colapsar menu lateral'}
-          >
-            {sidebarCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-          </button>
+
 
           {/* Brand (centralizado) */}
-          <div className={`flex items-center justify-center min-w-0 ${sidebarCollapsed ? 'gap-0' : 'gap-3'}`}>
+          <div className={`flex items-center min-w-0 ${sidebarCollapsed ? 'hidden' : 'gap-2'}`}>
             <Link to="/" onClick={() => setSidebarOpen(false)} className="block">
               <img
                 src={appLogoSrc}
                 onError={() => setAppLogoSrc('/brand/logo.png')}
                 alt="Lucraí"
-                className={`${sidebarCollapsed ? 'h-10' : 'h-16 md:h-18'} w-auto object-contain drop-shadow-sm mx-auto transition-all`}
+                className={`${sidebarCollapsed ? 'h-10' : 'h-11'} w-auto object-contain drop-shadow-sm mx-auto transition-all`}
               />
             </Link>
             {logoSignedUrl && !sidebarCollapsed ? (
@@ -171,9 +160,20 @@ function AppLayoutBody() {
               />
             ) : null}
           </div>
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed((v) => !v)}
+            className="hidden md:flex shrink-0 h-8 w-8 items-center justify-center rounded-lg text-white/75 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-lucrai-200"
+            aria-controls="app-sidebar"
+            aria-expanded={!sidebarCollapsed}
+            aria-label={sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+            title={sidebarCollapsed ? 'Expandir menu lateral' : 'Recolher menu lateral'}
+          >
+            <PanelLeft size={18} strokeWidth={1.75} />
+          </button>
         </div>
 
-        <nav className={`${sidebarCollapsed ? 'p-3' : 'p-4'} space-y-1`}>
+        <nav className={`${sidebarCollapsed ? 'p-2' : 'p-3 overflow-y-auto'} space-y-0.5 max-h-[calc(100vh-180px)]`}>
           <NavItem to="/" icon={LayoutDashboard} label="Visão Geral" collapsed={sidebarCollapsed} onClick={() => setSidebarOpen(false)} />
           <NavItem to="/dashboard" icon={BarChart3} label="Dashboard" collapsed={sidebarCollapsed} onClick={() => setSidebarOpen(false)} />
           <NavItem
@@ -195,13 +195,13 @@ function AppLayoutBody() {
                 onClick={() => setSidebarOpen(false)}
                 title="Configurações"
                 aria-label="Configurações"
-                className={`group relative flex h-12 items-center justify-center rounded-2xl transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
+                className={`group relative flex h-10 items-center justify-center rounded-lg transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
                   settingsActive
                     ? 'bg-white/10 text-white font-semibold shadow-glow'
                     : 'text-white/85 hover:bg-white/8 hover:text-white'
                 }`}
               >
-                <SettingsIcon size={20} className={settingsActive ? 'text-lucrai-200' : 'text-white/80'} />
+                <SettingsIcon size={18} className={settingsActive ? 'text-lucrai-200 shrink-0' : 'text-white/80 shrink-0'} />
                 <span className="pointer-events-none absolute left-[calc(100%+0.75rem)] top-1/2 z-50 -translate-y-1/2 whitespace-nowrap rounded-lg bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
                   Configurações
                 </span>
@@ -210,21 +210,21 @@ function AppLayoutBody() {
               <button
                 type="button"
                 onClick={() => setSettingsOpen((v) => !v)}
-                className={`w-full flex h-12 items-center justify-between px-4 rounded-2xl transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
+                className={`w-full flex h-10 items-center justify-between gap-2 px-3 rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-white/20 ${
                   settingsActive
                     ? 'bg-white/10 text-white font-semibold shadow-glow'
                     : 'text-white/85 hover:bg-white/8 hover:text-white'
                 }`}
                 aria-expanded={settingsOpen}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <SettingsIcon size={20} className={settingsActive ? 'text-white' : 'text-white/70'} />
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <SettingsIcon size={18} className={settingsActive ? 'text-white shrink-0' : 'text-white/70 shrink-0'} />
                   <span className="whitespace-nowrap">Configurações</span>
                 </div>
                 {settingsOpen ? (
-                  <ChevronDown size={18} className="text-white/70" />
+                  <ChevronDown size={14} className="text-white/70 shrink-0" />
                 ) : (
-                  <ChevronRight size={18} className="text-white/70" />
+                  <ChevronRight size={14} className="text-white/70 shrink-0" />
                 )}
               </button>
             )}
@@ -234,61 +234,61 @@ function AppLayoutBody() {
                 <Link
                   to="/settings?tab=DRE"
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/35 min-w-0 ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-white/35 min-w-0 ${
                     activeSettingsTab === 'DRE'
                       ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(1,100,180,0.10)]'
                       : 'text-white/85 hover:bg-white/8 hover:text-white'
                   }`}
                 >
-                  <SettingsIcon size={16} className="text-white/70" />
+                  <SettingsIcon size={16} className="text-white/70 shrink-0" />
                   <span className="whitespace-nowrap">Estrutura DRE</span>
                 </Link>
                 <Link
                   to="/settings?tab=CC"
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/35 min-w-0 ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-white/35 min-w-0 ${
                     activeSettingsTab === 'CC'
                       ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(1,100,180,0.10)]'
                       : 'text-white/85 hover:bg-white/8 hover:text-white'
                   }`}
                 >
-                  <Layers size={16} className="text-white/70" />
+                  <Layers size={16} className="text-white/70 shrink-0" />
                   <span className="whitespace-nowrap">Centros de Custo</span>
                 </Link>
                 <Link
                   to="/settings?tab=SUPPLIERS"
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/35 min-w-0 ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-white/35 min-w-0 ${
                     activeSettingsTab === 'SUPPLIERS'
                       ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(1,100,180,0.10)]'
                       : 'text-white/85 hover:bg-white/8 hover:text-white'
                   }`}
                 >
-                  <Users size={16} className="text-white/70" />
+                  <Users size={16} className="text-white/70 shrink-0" />
                   <span className="whitespace-nowrap">Fornecedores</span>
                 </Link>
                 <Link
                   to="/settings?tab=BANKS"
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/35 min-w-0 ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-white/35 min-w-0 ${
                     activeSettingsTab === 'BANKS'
                       ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(1,100,180,0.10)]'
                       : 'text-white/85 hover:bg-white/8 hover:text-white'
                   }`}
                 >
-                  <Landmark size={16} className="text-white/70" />
+                  <Landmark size={16} className="text-white/70 shrink-0" />
                   <span className="whitespace-nowrap">Bancos / Contas</span>
                 </Link>
                 <Link
                   to="/settings?tab=PROFILE"
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-white/35 min-w-0 ${
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-white/35 min-w-0 ${
                     activeSettingsTab === 'PROFILE'
                       ? 'bg-white/10 text-white shadow-[0_0_20px_rgba(1,100,180,0.10)]'
                       : 'text-white/85 hover:bg-white/8 hover:text-white'
                   }`}
                 >
-                  <Users size={16} className="text-white/70" />
+                  <Users size={16} className="text-white/70 shrink-0" />
                   <span className="whitespace-nowrap">Meu Perfil</span>
                 </Link>
               </div>
@@ -300,7 +300,7 @@ function AppLayoutBody() {
           <div className={sidebarCollapsed ? 'flex flex-col items-center gap-3' : 'flex items-center justify-between gap-3'}>
             <div className={`flex min-w-0 ${sidebarCollapsed ? 'items-center justify-center' : 'items-center gap-3'}`}>
               <div
-                className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-white font-bold shrink-0"
+                className="w-8 h-8 text-xs rounded-full bg-white/15 flex items-center justify-center text-white font-bold shrink-0"
                 title={sidebarCollapsed ? user?.email || 'Usuário' : undefined}
               >
                 {initials}

@@ -123,7 +123,7 @@ export function useDashboardInsights(
           type: 'BUDGET_EXCEEDED',
           priority: 10,
           title: `Atenção com ${category?.name || 'Desconhecida'}`,
-          message: `Esta categoria concentra ${percentage.toFixed(0)}% do seu orçamento total. Verifique se isso está dentro do esperado.`,
+          message: `Esta categoria concentra ${((realized / budget) * 100).toFixed(0)}% do seu orçamento da categoria. Verifique se isso está dentro do esperado.`,
           categoryName: category?.name,
           currentValue: realized,
           budgetLimit: budget,
@@ -138,12 +138,12 @@ export function useDashboardInsights(
       const budget = budgetByCategory.get(catId) ?? 0;
       if (budget > 0) {
         const percentage = (realized / budget) * 100;
-        const daysElapsed = getDaysElapsed(currentMonth, today);
-        const daysTotal = getDaysInMonth(currentMonth);
+        const daysElapsed = getDaysElapsed(selectedMonth, today);
+        const daysTotal = getDaysInMonth(selectedMonth);
         const daysPercentage = (daysElapsed / daysTotal) * 100;
         const velocity = percentage / daysPercentage;
 
-        if (percentage >= 80 && percentage < 100 && velocity > 1.2) {
+        if (selectedMonth === today.slice(0, 7) && percentage >= 80 && percentage < 100 && velocity > 1.2) {
           const category = categoryById.get(catId);
           insights.push({
             type: 'BUDGET_ALERT',
